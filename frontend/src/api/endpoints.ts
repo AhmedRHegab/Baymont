@@ -142,19 +142,26 @@ export const auditApi = {
   },
 }
 
+export interface ImportResult {
+  totalRows: number
+  newOwners: number
+  newUnits: number
+  skippedExisting: number
+  errors: { row: number; message: string }[]
+  committed: boolean
+}
+
+async function postImport(path: string, file: File): Promise<ImportResult> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(path, { method: 'POST', credentials: 'include', body: form })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error((body as { message?: string }).message ?? 'فشل رفع الملف')
+  return body as ImportResult
+}
+
 export const importApi = {
-  preview: async (file: File) => {
-    const form = new FormData()
-    form.append('file', file)
-    const res = await fetch('/api/import/preview', {
-      method: 'POST',
-      credentials: 'include',
-      body: form,
-    })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      throw new Error(body.message ?? 'فشل الاستيراد')
-    }
-    return res.json() as Promise<{ message: string; implemented: boolean }>
-  },
+  templateUrl: '/api/import/template',
+  preview: (file: File) => postImport('/api/import/preview', file),
+  commit: (file: File) => postImport('/api/import/commit', file),
 }

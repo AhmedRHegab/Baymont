@@ -1,9 +1,7 @@
 using Baymont.Domain.Constants;
 using Baymont.Domain.Entities;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -24,13 +22,12 @@ public static class IdentitySeed
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
 
-        // Public deployments must not ship with well-known passwords: outside Development the
-        // admin password must come from configuration, and the gate user is only seeded when asked.
+        // Passwords come from configuration (appsettings.json "Seed" section). On the server they can be
+        // overridden with the environment variables Seed__AdminPassword / Seed__GatePassword.
+        // They are only used when the user does not exist yet.
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var isDev = scope.ServiceProvider.GetRequiredService<IHostEnvironment>().IsDevelopment();
-        var adminPassword = config["ADMIN_INITIAL_PASSWORD"] ?? (isDev ? "ChangeMe!123" : null);
-        var gatePassword = config["GATE_INITIAL_PASSWORD"] ?? (isDev ? "GateSearch!123" : null);
-        var adminFromConfig = !string.IsNullOrEmpty(config["ADMIN_INITIAL_PASSWORD"]);
+        var adminPassword = config["Seed:AdminPassword"];
+        var gatePassword = config["Seed:GatePassword"];
 
         const string adminUserName = "admin";
         var admin = await userManager.FindByNameAsync(adminUserName);
@@ -38,7 +35,7 @@ public static class IdentitySeed
         {
             if (adminPassword is null)
                 throw new InvalidOperationException(
-                    "No admin user exists. Set the ADMIN_INITIAL_PASSWORD environment variable for the first start.");
+                    "No admin user exists. Set Seed:AdminPassword in appsettings.json (or the Seed__AdminPassword environment variable).");
 
             admin = new AppUser
             {
@@ -46,7 +43,7 @@ public static class IdentitySeed
                 Email = "admin@baymont.local",
                 DisplayName = "مدير النظام",
                 IsActive = true,
-                MustChangePassword = !adminFromConfig,
+                MustChangePassword = false,
                 EmailConfirmed = true
             };
 

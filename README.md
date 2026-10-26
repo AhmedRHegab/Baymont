@@ -26,10 +26,10 @@ npm run dev
 
 Open http://localhost:5173 — API proxied to http://localhost:5080
 
-Default users (Development only; other environments need `ADMIN_INITIAL_PASSWORD`):
+Users created on first start (passwords come from the `Seed` section of `appsettings.json`; override on a server with `Seed__AdminPassword` / `Seed__GatePassword`):
 
-- `admin` / `ChangeMe!123` (Admin)
-- `gate` / `GateSearch!123` (SearchOnly)
+- `admin` (Admin)
+- `gate` (SearchOnly)
 
 ## Deploy
 

@@ -1132,3 +1132,73 @@ button {
     break-inside: avoid;
   }
 }
+
+/* Import page: big, simple, readable */
+.modal-wide {
+  width: min(680px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.help-steps {
+  margin: 0;
+  padding-inline-start: 1.4rem;
+  display: grid;
+  gap: 0.9rem;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.help-steps p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.help-steps ul,
+.help-notes {
+  margin: 0.3rem 0 0;
+  padding-inline-start: 1.2rem;
+  font-weight: 500;
+  line-height: 1.8;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.check-row input {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.btn.ok {
+  background: var(--ok);
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+}
+
+.center {
+  text-align: center;
+  justify-items: center;
+}
+
+.issue-list {
+  margin: 0;
+  padding-inline-start: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+}
+
+.banner.success {
+  background: var(--ok-soft);
+  color: var(--ok);
+}

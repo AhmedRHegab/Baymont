@@ -12,4 +12,3 @@ public record AuditLogDto(
     string? NewValuesJson,
     string? IpAddress);
 
-public record ImportStubResponse(string Message, bool Implemented);

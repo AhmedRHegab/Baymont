@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ContractorService>();
         services.AddScoped<DeliveryService>();
         services.AddScoped<SiteOperationsService>();
+        services.AddScoped<ImportService>();
         services.AddScoped<AuditQueryService>();
         return services;
     }

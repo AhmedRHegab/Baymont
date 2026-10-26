@@ -1,0 +1,160 @@
+import { api } from './client'
+import type {
+  OnSite,
+  OvernightReport,
+  ShiftAssignment,
+  StaffDto,
+  StaffLog,
+  AuditLogDto,
+  ContractorDetail,
+  ContractorSummary,
+  Delivery,
+  DeliveryList,
+  OwnerDetail,
+  OwnerSummary,
+  SearchResponse,
+  UnitDetail,
+  UnitSummary,
+  UserDto,
+  VehicleDetail,
+} from '../types'
+
+export const authApi = {
+  login: (userName: string, password: string) =>
+    api<UserDto>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ userName, password }),
+    }),
+  logout: () => api<{ message: string }>('/api/auth/logout', { method: 'POST' }),
+  me: () => api<UserDto>('/api/auth/me'),
+}
+
+export const searchApi = {
+  search: (q: string) => api<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}`),
+}
+
+export const ownersApi = {
+  lookup: (q = '') =>
+    api<OwnerSummary[]>(`/api/owners?q=${encodeURIComponent(q)}`),
+  get: (id: string) => api<OwnerDetail>(`/api/owners/${id}`),
+  create: (body: object) =>
+    api<OwnerDetail>('/api/owners', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<OwnerDetail>(`/api/owners/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: string) => api<void>(`/api/owners/${id}`, { method: 'DELETE' }),
+}
+
+export const unitsApi = {
+  lookup: (q = '') =>
+    api<UnitSummary[]>(`/api/units?q=${encodeURIComponent(q)}`),
+  get: (id: string) => api<UnitDetail>(`/api/units/${id}`),
+  create: (body: object) =>
+    api<UnitDetail>('/api/units', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<UnitDetail>(`/api/units/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: string) => api<void>(`/api/units/${id}`, { method: 'DELETE' }),
+}
+
+export const vehiclesApi = {
+  get: (id: string) => api<VehicleDetail>(`/api/vehicles/${id}`),
+  create: (body: object) =>
+    api<VehicleDetail>('/api/vehicles', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<VehicleDetail>(`/api/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: string) => api<void>(`/api/vehicles/${id}`, { method: 'DELETE' }),
+}
+
+export const contractorsApi = {
+  list: (q = '') =>
+    api<ContractorSummary[]>(`/api/contractors?q=${encodeURIComponent(q)}`),
+  get: (id: string) => api<ContractorDetail>(`/api/contractors/${id}`),
+  create: (body: object) =>
+    api<ContractorDetail>('/api/contractors', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<ContractorDetail>(`/api/contractors/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: string) => api<void>(`/api/contractors/${id}`, { method: 'DELETE' }),
+}
+
+export const deliveriesApi = {
+  list: (params: Record<string, string> = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== ''))
+    return api<DeliveryList>(`/api/deliveries?${qs}`)
+  },
+  get: (id: string) => api<Delivery>(`/api/deliveries/${id}`),
+  create: (body: object) =>
+    api<Delivery>('/api/deliveries', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<Delivery>(`/api/deliveries/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  remove: (id: string) => api<void>(`/api/deliveries/${id}`, { method: 'DELETE' }),
+}
+
+export const siteApi = {
+  overnight: (date: string, shift: number) =>
+    api<OvernightReport>(`/api/overnight-stays?date=${date}&shift=${shift}`),
+  addOvernight: (body: object) =>
+    api<{ id: string }>('/api/overnight-stays', { method: 'POST', body: JSON.stringify(body) }),
+  removeOvernight: (id: string) => api<void>(`/api/overnight-stays/${id}`, { method: 'DELETE' }),
+
+  staff: (q = '') => api<StaffDto[]>(`/api/staff?q=${encodeURIComponent(q)}`),
+  createStaff: (body: object) =>
+    api<{ id: string }>('/api/staff', { method: 'POST', body: JSON.stringify(body) }),
+  updateStaff: (id: string, body: object) =>
+    api<void>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  removeStaff: (id: string) => api<void>(`/api/staff/${id}`, { method: 'DELETE' }),
+  enter: (id: string) => api<void>(`/api/staff/${id}/enter`, { method: 'POST' }),
+  exit: (id: string) => api<void>(`/api/staff/${id}/exit`, { method: 'POST' }),
+  staffLog: (from: string, to: string) =>
+    api<StaffLog[]>(`/api/staff/log?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  onSite: () => api<OnSite>('/api/on-site'),
+
+  shifts: (date: string) => api<ShiftAssignment[]>(`/api/shifts?date=${date}`),
+  createShift: (body: object) =>
+    api<{ id: string }>('/api/shifts', { method: 'POST', body: JSON.stringify(body) }),
+  updateShift: (id: string, body: object) =>
+    api<void>(`/api/shifts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  removeShift: (id: string) => api<void>(`/api/shifts/${id}`, { method: 'DELETE' }),
+}
+
+export const uploadsApi = {
+  url: (path: string) => `/api/uploads/${path}`,
+  upload: async (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/uploads', { method: 'POST', credentials: 'include', body: form })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(body.message ?? 'فشل رفع الملف')
+    return (body as { path: string }).path
+  },
+}
+
+export const usersApi = {
+  list: () => api<UserDto[]>('/api/users'),
+  create: (body: object) =>
+    api<UserDto>('/api/users', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<UserDto>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+}
+
+export const auditApi = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? `?${new URLSearchParams(params)}` : ''
+    return api<AuditLogDto[]>(`/api/audit-logs${qs}`)
+  },
+}
+
+export const importApi = {
+  preview: async (file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/import/preview', {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.message ?? 'فشل الاستيراد')
+    }
+    return res.json() as Promise<{ message: string; implemented: boolean }>
+  },
+}

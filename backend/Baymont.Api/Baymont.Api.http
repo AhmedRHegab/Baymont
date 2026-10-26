@@ -1,0 +1,6 @@
+@Baymont.Api_HostAddress = http://localhost:5010
+
+GET {{Baymont.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

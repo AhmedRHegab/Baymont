@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Baymont.Api/Baymont.Api.csproj" />
+  <Project Path="Baymont.Application/Baymont.Application.csproj" />
+  <Project Path="Baymont.Domain/Baymont.Domain.csproj" />
+  <Project Path="Baymont.Infrastructure/Baymont.Infrastructure.csproj" />
+</Solution>

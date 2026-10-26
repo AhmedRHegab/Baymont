@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/App_Data/
+backend/Baymont.Api/wwwroot/
+frontend/dist/
+docs/
+deploy/
+.git/
+.DS_Store
+

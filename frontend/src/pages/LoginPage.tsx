@@ -7,6 +7,7 @@ export function LoginPage() {
   const { user, loading, login } = useAuth()
   const [userName, setUserName] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -65,13 +66,21 @@ export function LoginPage() {
         <label>
           كلمة المرور
           <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
             placeholder="••••••••"
           />
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={showPassword}
+            onChange={(e) => setShowPassword(e.target.checked)}
+          />
+          إظهار كلمة المرور
         </label>
 
         {error && <div className="banner error">{error}</div>}

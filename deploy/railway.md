@@ -46,6 +46,18 @@ A fresh volume starts with invented sample data and a yellow "بيانات تج�
 Before real use, an admin presses **حذف البيانات التجريبية** (it is permanent and does not touch real records), or set
 `Seed__DemoData=false` before the very first start to skip it.
 
+## Reset: erase everything and start from the sample data
+
+If the database already holds records you do not want (so the sample data was skipped), set the variable
+`Seed__ResetToken` to any new word (for example `reset1`) and redeploy. On that start the app, in one transaction:
+
+- **erases** all owners, units, vehicles, contractors, deliveries, permits, staff, shifts, the mail log, the audit log and the uploaded photos;
+- **keeps** the user accounts and login keys;
+- **loads** the sample data.
+
+It runs **once per value**: restarts and redeploys with the same word do nothing, so the variable can stay or be removed.
+To reset again, use a different word. **This is permanent. Do not set it once real data matters.**
+
 ## Things to know
 
 - **Single replica only.** SQLite is a file on one volume; keep `numReplicas` at 1.

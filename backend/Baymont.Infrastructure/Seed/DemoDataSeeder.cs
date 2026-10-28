@@ -4,6 +4,7 @@ using Baymont.Domain.Enums;
 using Baymont.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -44,9 +45,24 @@ public static class DemoDataSeeder
         using var scope = services.CreateScope();
         var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DemoDataSeeder");
-        if (!config.GetValue<bool>("Seed:DemoData")) return;
-
+        var demoOn = config.GetValue<bool>("Seed:DemoData");
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // One-time reset: erase every business record and start again from the sample data.
+        // It runs once per distinct value of Seed:ResetToken, so restarts and redeploys never repeat it.
+        var token = config["Seed:ResetToken"]?.Trim();
+        if (!string.IsNullOrEmpty(token))
+        {
+            var resetMarker = $"{DemoRecord.MarkerType}:Reset:{(token.Length > 45 ? token[..45] : token)}";
+            if (!await db.DemoRecords.AnyAsync(d => d.EntityType == resetMarker))
+            {
+                var uploads = Path.Combine(scope.ServiceProvider.GetRequiredService<IHostEnvironment>().ContentRootPath, "App_Data", "uploads");
+                await ResetAsync(db, resetMarker, demoOn, uploads, logger);
+                return;
+            }
+        }
+
+        if (!demoOn) return;
 
         // Already seeded once (even if deleted since): never again.
         if (await db.DemoRecords.AnyAsync(d => d.EntityType == DemoRecord.MarkerType)) return;
@@ -67,6 +83,41 @@ public static class DemoDataSeeder
 
         var count = await CreateAsync(db);
         logger.LogInformation("Sample data created ({Count} records). An admin can delete it from the banner.", count);
+    }
+
+    /// <summary>
+    /// Erases all business records (owners, units, vehicles, contractors, deliveries, permits, staff, shifts,
+    /// mail log, audit log and uploaded files) and loads the sample data, all in one transaction.
+    /// User accounts and the login keys are kept.
+    /// </summary>
+    private static async Task ResetAsync(AppDbContext db, string resetMarker, bool loadSample, string uploadsFolder, ILogger logger)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        await db.Reservations.ExecuteDeleteAsync();
+        await db.Deliveries.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.OvernightStays.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.InboxMessages.ExecuteDeleteAsync();
+        await db.ShiftAssignments.ExecuteDeleteAsync();
+        await db.StaffMembers.ExecuteDeleteAsync();
+        await db.Contractors.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.Vehicles.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.Units.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.Owners.IgnoreQueryFilters().ExecuteDeleteAsync();
+        await db.AuditLogs.ExecuteDeleteAsync();
+        await db.DemoRecords.ExecuteDeleteAsync();
+
+        var created = loadSample ? await CreateAsync(db) : 0;
+        db.DemoRecords.Add(new DemoRecord { Id = Guid.NewGuid(), EntityType = resetMarker, EntityId = Guid.Empty });
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        // The uploaded photos belonged to the erased records.
+        if (Directory.Exists(uploadsFolder))
+            foreach (var file in Directory.EnumerateFiles(uploadsFolder))
+                File.Delete(file);
+
+        logger.LogWarning("RESET done: all records erased, {Count} sample records loaded.", created);
     }
 
     private static void Build(AppDbContext db)

@@ -2,7 +2,8 @@ namespace Baymont.Domain.Entities;
 
 /// <summary>
 /// Remembers which records are sample data so they can be hard-deleted later.
-/// One row with EntityType "Marker" stays forever so the sample data is never created twice.
+/// Rows whose EntityType starts with "Marker" are bookkeeping, not sample data, and are never deleted:
+/// "Marker" means the sample data was created once, "Marker:Reset:&lt;token&gt;" means that reset already ran.
 /// </summary>
 public class DemoRecord
 {

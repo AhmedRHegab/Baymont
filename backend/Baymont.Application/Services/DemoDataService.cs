@@ -11,7 +11,7 @@ public class DemoDataService(IAppDbContext db)
 {
     public async Task<DemoStatusDto> StatusAsync(CancellationToken ct = default)
     {
-        var count = await db.DemoRecords.CountAsync(d => d.EntityType != DemoRecord.MarkerType, ct);
+        var count = await db.DemoRecords.CountAsync(d => !d.EntityType.StartsWith(DemoRecord.MarkerType), ct);
         return new DemoStatusDto(count > 0, count);
     }
 
@@ -19,7 +19,7 @@ public class DemoDataService(IAppDbContext db)
     public async Task<int> ClearAsync(CancellationToken ct = default)
     {
         var rows = await db.DemoRecords.AsNoTracking()
-            .Where(d => d.EntityType != DemoRecord.MarkerType)
+            .Where(d => !d.EntityType.StartsWith(DemoRecord.MarkerType))
             .Select(d => new { d.EntityType, d.EntityId })
             .ToListAsync(ct);
         if (rows.Count == 0) return 0;
@@ -62,7 +62,7 @@ public class DemoDataService(IAppDbContext db)
         var auditIds = rows.Select(r => r.EntityId.ToString()).ToList();
         await db.AuditLogs.Where(a => auditIds.Contains(a.EntityId)).ExecuteDeleteAsync(ct);
 
-        await db.DemoRecords.Where(d => d.EntityType != DemoRecord.MarkerType).ExecuteDeleteAsync(ct);
+        await db.DemoRecords.Where(d => !d.EntityType.StartsWith(DemoRecord.MarkerType)).ExecuteDeleteAsync(ct);
         return rows.Count;
     }
 }

@@ -51,7 +51,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     {
         var r = await LoadAsync(id, ct);
         if (r.Status == ReservationStatus.Rejected && !request.Approve)
-            throw new InvalidOperationException("الحجز مرفوض. اعتمده أولاً إن أردت تعديله.");
+            throw new ValidationException("الحجز مرفوض. اعتمده أولاً إن أردت تعديله.");
         await ApplyAsync(r, request, ct);
         await db.SaveChangesAsync(ct);
         return Map(r);
@@ -61,7 +61,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     {
         var r = await LoadAsync(id, ct);
         if (r.Movements.Count > 0)
-            throw new InvalidOperationException("لا يمكن رفض حجز سُجّل دخوله.");
+            throw new ValidationException("لا يمكن رفض حجز سُجّل دخوله.");
         r.Status = ReservationStatus.Rejected;
         r.ReviewedBy = currentUser.UserName;
         r.ReviewedAt = DateTimeOffset.UtcNow;
@@ -80,18 +80,23 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     {
         var code = (q.UnitCode ?? string.Empty).Trim();
         var names = (q.GuestNames ?? string.Empty).Trim();
-        if (code.Length == 0) throw new ArgumentException("كود الوحدة مطلوب.");
-        if (names.Length == 0) throw new ArgumentException("اسم الضيف مطلوب.");
-        if (q.PersonsCount < 1 || q.PersonsCount > 100) throw new ArgumentException("عدد الأشخاص غير صالح.");
-        if (q.Type is not null && !Enum.IsDefined(q.Type.Value)) throw new ArgumentException("نوع الزيارة غير صالح.");
+        if (code.Length == 0) throw new ValidationException("كود الوحدة مطلوب.");
+        if (names.Length == 0) throw new ValidationException("اسم الضيف مطلوب.");
+        if (q.PersonsCount < 1 || q.PersonsCount > 100) throw new ValidationException("عدد الأشخاص غير صالح.");
+        if (q.Type is not null && !Enum.IsDefined(q.Type.Value)) throw new ValidationException("نوع الزيارة غير صالح.");
+        Check.Date(q.CheckInDate, "تاريخ بداية التصريح");
+        Check.Date(q.CheckOutDate, "تاريخ نهاية التصريح");
         if (q.CheckInDate is not null && q.CheckOutDate is not null && q.CheckOutDate < q.CheckInDate)
-            throw new ArgumentException("تاريخ المغادرة قبل تاريخ الوصول.");
+            throw new ValidationException("تاريخ نهاية التصريح قبل تاريخ بدايته.");
+        // Permits are weekly; a year or more is almost certainly a typo in the date.
+        if (q.CheckInDate is { } from && q.CheckOutDate is { } to && to.DayNumber - from.DayNumber > 366)
+            throw new ValidationException("فترة التصريح أطول من سنة. راجع التاريخين.");
 
         if (q.Approve)
         {
-            if (q.Type is null) throw new ArgumentException("اختر نوع الزيارة قبل الاعتماد.");
+            if (q.Type is null) throw new ValidationException("اختر نوع الزيارة قبل الاعتماد.");
             if (q.CheckInDate is null || q.CheckOutDate is null)
-                throw new ArgumentException("أدخل تاريخ الوصول وتاريخ المغادرة قبل الاعتماد.");
+                throw new ValidationException("أدخل تاريخ الوصول وتاريخ المغادرة قبل الاعتماد.");
         }
 
         r.UnitCode = code;
@@ -129,8 +134,8 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     {
         var r = await LoadApprovedAsync(id, ct);
         if (r.FinalDepartureAt is not null)
-            throw new InvalidOperationException("سُجلت مغادرته النهائية، ولا يمكنه الدخول مرة أخرى إلا بتصريح جديد يصل بالبريد.");
-        if (IsInside(r)) throw new InvalidOperationException("مسجل داخل الموقع بالفعل.");
+            throw new ValidationException("سُجلت مغادرته النهائية، ولا يمكنه الدخول مرة أخرى إلا بتصريح جديد يصل بالبريد.");
+        if (IsInside(r)) throw new ValidationException("مسجل داخل الموقع بالفعل.");
 
         db.ReservationMovements.Add(new ReservationMovement
         {
@@ -145,7 +150,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     public async Task ExitAsync(Guid id, CancellationToken ct = default)
     {
         var r = await LoadApprovedAsync(id, ct);
-        var open = OpenMovement(r) ?? throw new InvalidOperationException("غير مسجل داخل الموقع.");
+        var open = OpenMovement(r) ?? throw new ValidationException("غير مسجل داخل الموقع.");
         open.ExitedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
     }
@@ -154,8 +159,8 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     public async Task FinalLeaveAsync(Guid id, CancellationToken ct = default)
     {
         var r = await LoadApprovedAsync(id, ct);
-        if (r.FinalDepartureAt is not null) throw new InvalidOperationException("تم تسجيل المغادرة النهائية بالفعل.");
-        if (r.Movements.Count == 0) throw new InvalidOperationException("لم يُسجل دخوله بعد.");
+        if (r.FinalDepartureAt is not null) throw new ValidationException("تم تسجيل المغادرة النهائية بالفعل.");
+        if (r.Movements.Count == 0) throw new ValidationException("لم يُسجل دخوله بعد.");
 
         var now = DateTimeOffset.UtcNow;
         var open = OpenMovement(r);
@@ -174,7 +179,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     {
         var r = await LoadApprovedAsync(id, ct);
         var last = r.Movements.OrderByDescending(m => m.EnteredAt).FirstOrDefault()
-            ?? throw new InvalidOperationException("لا يوجد تسجيل للتراجع عنه.");
+            ?? throw new ValidationException("لا يوجد تسجيل للتراجع عنه.");
 
         if (r.FinalDepartureAt is not null)
         {
@@ -204,7 +209,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     private async Task<Reservation> LoadApprovedAsync(Guid id, CancellationToken ct)
     {
         var r = await LoadAsync(id, ct);
-        if (r.Status != ReservationStatus.Approved) throw new InvalidOperationException("الحجز غير معتمد.");
+        if (r.Status != ReservationStatus.Approved) throw new ValidationException("الحجز غير معتمد.");
         return r;
     }
 

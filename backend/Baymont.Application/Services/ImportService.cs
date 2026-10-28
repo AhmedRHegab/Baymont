@@ -1,3 +1,4 @@
+using Baymont.Application.Common;
 using Baymont.Application.Dtos;
 using Baymont.Application.Interfaces;
 using Baymont.Domain.Entities;
@@ -75,9 +76,18 @@ public class ImportService(IAppDbContext db)
             }
 
             var name = r.Name.Trim();
-            if (name.Length > 256)
+            var problem = FieldProblem(name, 256, "اسم المالك")
+                          ?? FieldProblem(r.Terrace, 64, "المصطبة")
+                          ?? FieldProblem(r.Building, 64, "المبنى")
+                          ?? FieldProblem(r.Floor, 32, "الدور")
+                          ?? FieldProblem(r.Apartment, 32, "الشقة")
+                          ?? FieldProblem(r.Construction, 64, "الرقم الإنشائي")
+                          ?? (Check.IsValidPhone(r.Phone) && r.Phone.Trim().Length <= 64
+                              ? null
+                              : "رقم الموبايل غير صحيح. اكتب أرقاماً فقط.");
+            if (problem is not null)
             {
-                errors.Add(new ImportRowIssueDto(r.Number, "الاسم طويل جداً."));
+                errors.Add(new ImportRowIssueDto(r.Number, problem));
                 continue;
             }
 
@@ -182,6 +192,9 @@ public class ImportService(IAppDbContext db)
         }
     }
 
+    private static string? FieldProblem(string value, int max, string label)
+        => value.Trim().Length > max ? $"«{label}» طويل جداً (الحد الأقصى {max} حرفاً)." : null;
+
     private static string Cell(IXLWorksheet ws, int row, int col) => ws.Cell(row, col).GetString().Trim();
 
     private static string Key(string s) => string.Join(' ', s.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
@@ -193,7 +206,8 @@ public class ImportService(IAppDbContext db)
 
     private static string? Trim(string v, int max)
     {
+        // Length was already checked for every row, so nothing is ever cut off here.
         var t = v.Trim();
-        return t.Length == 0 ? null : t.Length > max ? t[..max] : t;
+        return t.Length == 0 ? null : t;
     }
 }

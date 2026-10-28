@@ -39,11 +39,11 @@ export function DeliveriesPage() {
         </div>
         <label>
           من تاريخ
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={from} onChange={(e) => setFrom(e.target.value)} />
         </label>
         <label>
           إلى تاريخ
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
         <label>
           حالة الاستلام

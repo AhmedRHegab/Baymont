@@ -24,7 +24,11 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(
         Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+        // Malformed requests (bad JSON, wrong types, missing fields) get one short Arabic sentence.
+        options.InvalidModelStateResponseFactory = context =>
+            new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { message = ModelErrors.Describe(context.ModelState) }));
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -70,6 +74,9 @@ app.UseAuthorization();
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 app.MapControllers();
+// An unknown API address must answer with an error the screens can read, not with the web page.
+app.MapFallback("/api/{**path}", () =>
+    Results.Json(new { message = "العنوان المطلوب غير موجود." }, statusCode: StatusCodes.Status404NotFound));
 app.MapFallbackToFile("index.html");
 
 app.Run();

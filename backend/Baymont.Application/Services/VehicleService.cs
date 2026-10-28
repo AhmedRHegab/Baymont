@@ -25,11 +25,12 @@ public class VehicleService(IAppDbContext db, ICurrentUser currentUser)
         await EnsureLinks(request.OwnerId, request.UnitId, ct);
         var normalized = PlateNormalizer.Normalize(request.PlateNumber);
         if (string.IsNullOrEmpty(normalized))
-            throw new ArgumentException("رقم اللوحة مطلوب.");
+            throw new ValidationException("رقم اللوحة مطلوب.");
+        Check.MaxLength(request.PlateNumber, 64, "رقم اللوحة");
 
         var duplicate = await db.Vehicles.AnyAsync(v => v.PlateNumberNormalized == normalized, ct);
         if (duplicate)
-            throw new InvalidOperationException("رقم اللوحة مسجل مسبقاً.");
+            throw new ValidationException("رقم اللوحة مسجل مسبقاً.");
 
         var now = DateTimeOffset.UtcNow;
         var vehicle = new Vehicle
@@ -63,12 +64,12 @@ public class VehicleService(IAppDbContext db, ICurrentUser currentUser)
         await EnsureLinks(request.OwnerId, request.UnitId, ct);
         var normalized = PlateNormalizer.Normalize(request.PlateNumber);
         if (string.IsNullOrEmpty(normalized))
-            throw new ArgumentException("رقم اللوحة مطلوب.");
+            throw new ValidationException("رقم اللوحة مطلوب.");
 
         var duplicate = await db.Vehicles.AnyAsync(
             v => v.PlateNumberNormalized == normalized && v.Id != id, ct);
         if (duplicate)
-            throw new InvalidOperationException("رقم اللوحة مسجل مسبقاً.");
+            throw new ValidationException("رقم اللوحة مسجل مسبقاً.");
 
         vehicle.PlateNumber = request.PlateNumber.Trim();
         vehicle.PlateNumberNormalized = normalized;

@@ -84,11 +84,12 @@ public class DeliveryService(IAppDbContext db, ICurrentUser currentUser)
 
     private async Task Apply(Delivery d, SaveDeliveryRequest r, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(r.UnitNumber)) throw new ArgumentException("رقم الوحدة مطلوب.");
-        if (string.IsNullOrWhiteSpace(r.CustomerName)) throw new ArgumentException("اسم العميل مطلوب.");
-        if (string.IsNullOrWhiteSpace(r.HandoverEngineerName)) throw new ArgumentException("اسم مهندس التسليم مطلوب.");
+        Check.Date(r.DeliveryDate, "تاريخ التسليم");
+        if (string.IsNullOrWhiteSpace(r.UnitNumber)) throw new ValidationException("رقم الوحدة مطلوب.");
+        if (string.IsNullOrWhiteSpace(r.CustomerName)) throw new ValidationException("اسم العميل مطلوب.");
+        if (string.IsNullOrWhiteSpace(r.HandoverEngineerName)) throw new ValidationException("اسم مهندس التسليم مطلوب.");
         if (!r.IsReceived && string.IsNullOrWhiteSpace(r.NotReceivedReason))
-            throw new ArgumentException("اذكر سبب عدم الاستلام.");
+            throw new ValidationException("اذكر سبب عدم الاستلام.");
         if (r.UnitId is not null && !await db.Units.AnyAsync(u => u.Id == r.UnitId, ct))
             throw new NotFoundException("الوحدة غير موجودة.");
 

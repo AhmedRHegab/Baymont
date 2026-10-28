@@ -45,14 +45,15 @@ public class SiteOperationsService(IAppDbContext db)
 
     public async Task<Guid> AddOvernightAsync(SaveOvernightStayRequest r, CancellationToken ct = default)
     {
-        if (!Enum.IsDefined(r.Shift)) throw new ArgumentException("الوردية غير صالحة.");
+        if (!Enum.IsDefined(r.Shift)) throw new ValidationException("الوردية غير صالحة.");
+        Check.Date(r.StayDate, "التاريخ");
         if (!await db.Owners.AnyAsync(o => o.Id == r.OwnerId, ct))
             throw new NotFoundException("المالك غير موجود.");
         if (r.UnitId is not null && !await db.Units.AnyAsync(u => u.Id == r.UnitId, ct))
             throw new NotFoundException("الوحدة غير موجودة.");
         if (await db.OvernightStays.AnyAsync(
                 s => s.StayDate == r.StayDate && s.Shift == r.Shift && s.OwnerId == r.OwnerId, ct))
-            throw new InvalidOperationException("هذا المالك مسجل مسبقاً في نفس اليوم والوردية.");
+            throw new ValidationException("هذا المالك مسجل مسبقاً في نفس اليوم والوردية.");
 
         var stay = new OvernightStay
         {
@@ -136,7 +137,7 @@ public class SiteOperationsService(IAppDbContext db)
     {
         if (!await db.StaffMembers.AnyAsync(s => s.Id == staffId, ct)) throw new NotFoundException();
         if (await db.StaffEntries.AnyAsync(e => e.StaffMemberId == staffId && e.ExitAt == null, ct))
-            throw new InvalidOperationException("الموظف مسجل دخول بالفعل.");
+            throw new ValidationException("الموظف مسجل دخول بالفعل.");
 
         db.StaffEntries.Add(new StaffEntry
         {
@@ -153,7 +154,7 @@ public class SiteOperationsService(IAppDbContext db)
             .Where(e => e.StaffMemberId == staffId && e.ExitAt == null)
             .OrderByDescending(e => e.EntryAt)
             .FirstOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("الموظف غير مسجل دخول.");
+            ?? throw new ValidationException("الموظف غير مسجل دخول.");
         open.ExitAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
     }
@@ -251,7 +252,8 @@ public class SiteOperationsService(IAppDbContext db)
 
     private static void ApplyStaff(StaffMember m, SaveStaffRequest r)
     {
-        if (string.IsNullOrWhiteSpace(r.Name)) throw new ArgumentException("اسم الموظف مطلوب.");
+        if (string.IsNullOrWhiteSpace(r.Name)) throw new ValidationException("اسم الموظف مطلوب.");
+        Check.Phone(r.Phone, "رقم الموبايل");
         m.Name = r.Name.Trim();
         m.Company = Clean(r.Company);
         m.JobTitle = Clean(r.JobTitle);
@@ -261,8 +263,10 @@ public class SiteOperationsService(IAppDbContext db)
 
     private static void ApplyShift(ShiftAssignment a, SaveShiftAssignmentRequest r)
     {
-        if (string.IsNullOrWhiteSpace(r.Name)) throw new ArgumentException("الاسم مطلوب.");
-        if (!Enum.IsDefined(r.Kind)) throw new ArgumentException("نوع الوردية غير صالح.");
+        if (string.IsNullOrWhiteSpace(r.Name)) throw new ValidationException("الاسم مطلوب.");
+        if (!Enum.IsDefined(r.Kind)) throw new ValidationException("نوع الوردية غير صالح.");
+        Check.Date(r.ShiftDate, "اليوم");
+        Check.Phone(r.Phone, "رقم التليفون");
         a.ShiftDate = r.ShiftDate;
         a.Kind = r.Kind;
         a.Name = r.Name.Trim();

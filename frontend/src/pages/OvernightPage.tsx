@@ -116,7 +116,7 @@ export function OvernightPage() {
       <section className="card form-grid">
         <label>
           التاريخ
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
         <label>
           الوردية

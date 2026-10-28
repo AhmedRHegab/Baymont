@@ -7,6 +7,7 @@ import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
 import { ReservationCard } from '../components/ReservationCard'
 import { useAuth } from '../hooks/useAuth'
+import { checkFile, excelRule } from '../lib/validation'
 import type { ReservationImportResult } from '../types'
 
 const tabs = [
@@ -38,6 +39,12 @@ export function ReservationsPage() {
   async function onPick(file?: File) {
     if (fileRef.current) fileRef.current.value = ''
     if (!file) return
+    const problem = checkFile(file, excelRule)
+    if (problem) {
+      setError(problem)
+      setResult(null)
+      return
+    }
     setBusy(true)
     setError(null)
     setResult(null)
@@ -47,7 +54,7 @@ export function ReservationsPage() {
       void qc.invalidateQueries({ queryKey: ['reservations-pending'] })
       setStatus(0)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل رفع الملف')
+      setError(err instanceof Error ? err.message : 'تعذر رفع الملف. حاول مرة أخرى.')
     } finally {
       setBusy(false)
     }

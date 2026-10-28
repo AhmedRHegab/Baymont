@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { uploadsApi } from '../api/endpoints'
+import { checkFile, photoRule } from '../lib/validation'
 
 interface Props {
   label: string
@@ -18,12 +19,18 @@ export function PhotoField({ label, value, disabled, canView, onChange }: Props)
 
   async function onPick(file?: File) {
     if (!file) return
+    const problem = checkFile(file, photoRule)
+    if (problem) {
+      setError(problem)
+      if (inputRef.current) inputRef.current.value = ''
+      return
+    }
     setBusy(true)
     setError(null)
     try {
       onChange(await uploadsApi.upload(file))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل رفع الملف')
+      setError(err instanceof Error ? err.message : 'تعذر رفع الملف. حاول مرة أخرى.')
     } finally {
       setBusy(false)
       if (inputRef.current) inputRef.current.value = ''

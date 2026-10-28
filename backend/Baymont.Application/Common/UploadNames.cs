@@ -16,7 +16,7 @@ public static partial class UploadNames
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         var name = value.Trim();
-        if (!IsValid(name)) throw new ArgumentException("مسار الملف غير صالح.");
+        if (!IsValid(name)) throw new ValidationException("مسار الملف غير صالح.");
         return name;
     }
 }

@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddScoped<ValidationSaveChangesInterceptor>();
 
         var connectionString = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("Connection string 'Default' is missing.");
@@ -25,7 +26,9 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             options.UseSqlite(connectionString, o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-            options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
+            options.AddInterceptors(
+                sp.GetRequiredService<ValidationSaveChangesInterceptor>(),
+                sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
 
         services.Configure<Mail.MailOptions>(configuration.GetSection("Mail"));

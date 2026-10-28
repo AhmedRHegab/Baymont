@@ -149,7 +149,7 @@ export function StaffPage() {
 
       <section className="card stack">
         <div className="search-row">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث بالاسم أو الشركة أو اللوحة..." aria-label="بحث الموظفين" />
+          <input maxLength={100} value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث بالاسم أو الشركة أو اللوحة..." aria-label="بحث الموظفين" />
           {canEdit && (
             <button
               type="button"
@@ -169,23 +169,23 @@ export function StaffPage() {
           <form className="form-grid sub-item" onSubmit={onSubmit}>
             <label>
               الاسم *
-              <input value={form.name} onChange={(e) => set({ name: e.target.value })} required autoFocus />
+              <input maxLength={256} value={form.name} onChange={(e) => set({ name: e.target.value })} required autoFocus />
             </label>
             <label>
               الشركة
-              <input value={form.company} onChange={(e) => set({ company: e.target.value })} />
+              <input maxLength={256} value={form.company} onChange={(e) => set({ company: e.target.value })} />
             </label>
             <label>
               الوظيفة
-              <input value={form.jobTitle} onChange={(e) => set({ jobTitle: e.target.value })} />
+              <input maxLength={128} value={form.jobTitle} onChange={(e) => set({ jobTitle: e.target.value })} />
             </label>
             <label>
               رقم السيارة
-              <input value={form.plateNumber} onChange={(e) => set({ plateNumber: e.target.value })} />
+              <input maxLength={64} value={form.plateNumber} onChange={(e) => set({ plateNumber: e.target.value })} />
             </label>
             <label>
               الموبايل
-              <input value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" />
+              <input maxLength={64} pattern="[0-9٠-٩+ ,.،\/\(\)\-]*" title="اكتب أرقاماً فقط (يمكن استخدام + و - والمسافة)." value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" />
             </label>
             <div className="sticky-actions">
               <button className="btn lg" type="submit" disabled={saveMutation.isPending || !form.name.trim()}>

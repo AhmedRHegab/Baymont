@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import { SESSION_EXPIRED_EVENT } from '../api/client'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError } from '../types'
 
@@ -10,6 +11,15 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [expired] = useState(() => {
+    try {
+      const flag = sessionStorage.getItem(SESSION_EXPIRED_EVENT) === '1'
+      sessionStorage.removeItem(SESSION_EXPIRED_EVENT)
+      return flag
+    } catch {
+      return false
+    }
+  })
 
   if (!loading && user) return <Navigate to="/" replace />
 
@@ -83,6 +93,7 @@ export function LoginPage() {
           إظهار كلمة المرور
         </label>
 
+        {expired && !error && <div className="banner info">انتهت جلستك. سجّل الدخول من جديد.</div>}
         {error && <div className="banner error">{error}</div>}
 
         <button className="btn lg" type="submit" disabled={busy || !userName || !password}>

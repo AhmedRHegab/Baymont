@@ -73,7 +73,7 @@ export function ShiftsPage() {
       <section className="card form-grid">
         <label>
           اليوم
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
       </section>
 
@@ -93,23 +93,23 @@ export function ShiftsPage() {
           </label>
           <label>
             الاسم *
-            <input value={form.name} onChange={(e) => set({ name: e.target.value })} required autoFocus />
+            <input maxLength={256} value={form.name} onChange={(e) => set({ name: e.target.value })} required autoFocus />
           </label>
           <label>
             الوظيفة
-            <input value={form.jobTitle} onChange={(e) => set({ jobTitle: e.target.value })} />
+            <input maxLength={128} value={form.jobTitle} onChange={(e) => set({ jobTitle: e.target.value })} />
           </label>
           <label>
             العمل المسند
-            <input value={form.assignedWork} onChange={(e) => set({ assignedWork: e.target.value })} />
+            <input maxLength={256} value={form.assignedWork} onChange={(e) => set({ assignedWork: e.target.value })} />
           </label>
           <label>
             رقم التليفون
-            <input value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" />
+            <input maxLength={64} pattern="[0-9٠-٩+ ,.،\/\(\)\-]*" title="اكتب أرقاماً فقط (يمكن استخدام + و - والمسافة)." value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" />
           </label>
           <label>
             ملاحظات
-            <textarea value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
+            <textarea maxLength={512} value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} />
           </label>
           <div className="sticky-actions">
             <button className="btn lg" type="submit" disabled={saveMutation.isPending || !form.name.trim()}>

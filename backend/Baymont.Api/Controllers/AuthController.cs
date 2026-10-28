@@ -16,6 +16,9 @@ public class AuthController(
     [AllowAnonymous]
     public async Task<ActionResult<UserDto>> Login([FromBody] LoginRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new { message = "اكتب اسم المستخدم وكلمة المرور." });
+
         var user = await userManager.FindByNameAsync(request.UserName.Trim());
         if (user is null || !user.IsActive)
             return Unauthorized(new { message = "اسم المستخدم أو كلمة المرور غير صحيحة." });

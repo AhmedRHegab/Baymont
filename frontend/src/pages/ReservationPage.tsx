@@ -7,6 +7,7 @@ import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
 import { dayName, formatDateTime, formatDayDate } from '../lib/dates'
+import { endBeforeStart } from '../lib/validation'
 import { visitorTypes } from '../lib/lookups'
 import type { VisitorType } from '../types'
 
@@ -101,10 +102,28 @@ export function ReservationPage() {
   const busy = save.isPending || reject.isPending
   const filled = unitCode.trim() && guestNames.trim()
 
+  /** Returns what is wrong, in Arabic, or null. The server checks again; this just answers sooner. */
+  function problemWith(approve: boolean): string | null {
+    if (!Number.isInteger(persons) || persons < 1 || persons > 100) return 'عدد الأشخاص يجب أن يكون رقماً من 1 إلى 100.'
+    if (endBeforeStart(checkIn, checkOut)) return 'تاريخ نهاية التصريح قبل تاريخ بدايته.'
+    if (checkIn && checkOut && (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86_400_000 > 366)
+      return 'فترة التصريح أطول من سنة. راجع التاريخين.'
+    if (approve) {
+      if (!type) return 'اختر نوع الزيارة قبل الاعتماد.'
+      if (!checkIn || !checkOut) return 'أدخل تاريخ بداية التصريح وتاريخ نهايته قبل الاعتماد.'
+    }
+    return null
+  }
+
+  function submit(approve: boolean) {
+    const problem = problemWith(approve)
+    setError(problem)
+    if (!problem) save.mutate(approve)
+  }
+
   function onSubmit(e: FormEvent) {
     e.preventDefault()
-    setError(null)
-    save.mutate(approved)
+    submit(approved)
   }
 
   return (
@@ -162,16 +181,16 @@ export function ReservationPage() {
       <form className="card form-grid" onSubmit={onSubmit}>
         <label>
           كود الوحدة *
-          <input value={unitCode} onChange={(e) => setUnitCode(e.target.value)} required disabled={ro} dir="ltr" />
+          <input maxLength={128} value={unitCode} onChange={(e) => setUnitCode(e.target.value)} required disabled={ro} dir="ltr" />
         </label>
         <label>
           اسم الضيف / الضيوف *
           <span className="field-help">إذا كان أكثر من شخص افصل بينهم بعلامة /</span>
-          <textarea value={guestNames} onChange={(e) => setGuestNames(e.target.value)} required disabled={ro} rows={2} dir="ltr" />
+          <textarea maxLength={1024} value={guestNames} onChange={(e) => setGuestNames(e.target.value)} required disabled={ro} rows={2} dir="ltr" />
         </label>
         <label>
           عدد الأشخاص
-          <input type="number" min={1} max={100} value={persons} onChange={(e) => setPersons(Number(e.target.value))} disabled={ro} />
+          <input type="number" required min={1} max={100} value={persons} onChange={(e) => setPersons(Number(e.target.value))} disabled={ro} />
         </label>
         <label>
           نوع الزيارة {pending && '*'}
@@ -186,15 +205,15 @@ export function ReservationPage() {
         </label>
         <label>
           تاريخ بداية التصريح {pending && '*'}{checkIn ? ` — ${dayName(checkIn)}` : ''}
-          <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} disabled={ro} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} disabled={ro} />
         </label>
         <label>
           تاريخ نهاية التصريح {pending && '*'}{checkOut ? ` — ${dayName(checkOut)}` : ''}
-          <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} disabled={ro} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} disabled={ro} />
         </label>
         <label>
           ملاحظات
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} disabled={ro} rows={2} />
+          <textarea maxLength={1024} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={ro} rows={2} />
         </label>
 
         {error && <div className="banner error">{error}</div>}
@@ -203,7 +222,7 @@ export function ReservationPage() {
           <div className="sticky-actions">
             {pending ? (
               <>
-                <button className="btn lg ok" type="button" disabled={busy || !filled} onClick={() => save.mutate(true)}>
+                <button className="btn lg ok" type="button" disabled={busy || !filled} onClick={() => submit(true)}>
                   اعتماد
                 </button>
                 <button className="btn secondary" type="submit" disabled={busy || !filled}>

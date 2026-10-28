@@ -107,6 +107,10 @@ public static class ReservationExcelParser
             if (unit.Length == 0) { issues.Add(new ImportRowIssueDto(r, $"{label}: كود الوحدة فارغ، تم تجاهل السطر.")); continue; }
             if (names.Length == 0) { issues.Add(new ImportRowIssueDto(r, $"{label}: الاسم فارغ، تم تجاهل السطر.")); continue; }
 
+            if (unit.Length > 128) { issues.Add(new ImportRowIssueDto(r, $"{label}: كود الوحدة طويل جداً، تم تجاهل السطر.")); continue; }
+            if (names.Length > 1024) { issues.Add(new ImportRowIssueDto(r, $"{label}: الأسماء طويلة جداً، تم تجاهل السطر.")); continue; }
+            if (CountPersons(names) > 100) { issues.Add(new ImportRowIssueDto(r, $"{label}: عدد الأسماء أكبر من 100، تم تجاهل السطر.")); continue; }
+
             var checkIn = cols.CheckIn is null ? null : ParseDate(ws.Cell(r, cols.CheckIn.Value), out var badIn);
             var checkOut = cols.CheckOut is null ? null : ParseDate(ws.Cell(r, cols.CheckOut.Value), out var badOut);
             if (cols.CheckIn is not null && checkIn is null && !ws.Cell(r, cols.CheckIn.Value).IsEmpty())

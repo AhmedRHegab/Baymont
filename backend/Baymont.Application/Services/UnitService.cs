@@ -2,6 +2,7 @@ using Baymont.Application.Common;
 using Baymont.Application.Dtos;
 using Baymont.Application.Interfaces;
 using Baymont.Domain.Entities;
+using Baymont.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Baymont.Application.Services;
@@ -53,7 +54,8 @@ public class UnitService(IAppDbContext db, ICurrentUser currentUser)
 
     public async Task<UnitDetailDto> CreateAsync(CreateUnitRequest request, CancellationToken ct = default)
     {
-        await EnsureOwnerExists(request.OwnerId, ct);
+        await ValidateAsync(request.ConstructionNumber, request.Terrace, request.Building, request.Floor,
+            request.Apartment, request.Status, request.OwnerId, Guid.Empty, ct);
 
         var now = DateTimeOffset.UtcNow;
         var unit = new Unit
@@ -84,7 +86,8 @@ public class UnitService(IAppDbContext db, ICurrentUser currentUser)
         if (unit.RowVersion != request.RowVersion)
             throw new ConcurrencyException();
 
-        await EnsureOwnerExists(request.OwnerId, ct);
+        await ValidateAsync(request.ConstructionNumber, request.Terrace, request.Building, request.Floor,
+            request.Apartment, request.Status, request.OwnerId, unit.Id, ct);
 
         unit.ConstructionNumber = NullIfWhiteSpace(request.ConstructionNumber);
         unit.Terrace = NullIfWhiteSpace(request.Terrace);
@@ -107,6 +110,39 @@ public class UnitService(IAppDbContext db, ICurrentUser currentUser)
         SoftDelete.Apply(unit, currentUser.UserId);
         unit.UpdatedAt = DateTimeOffset.UtcNow;
         await SaveAsync(ct);
+    }
+
+    private async Task ValidateAsync(
+        string? construction, string? terrace, string? building, string? floor, string? apartment,
+        UnitStatus status, Guid? ownerId, Guid exceptId, CancellationToken ct)
+    {
+        var c = NullIfWhiteSpace(construction);
+        var t = NullIfWhiteSpace(terrace);
+        var b = NullIfWhiteSpace(building);
+        var f = NullIfWhiteSpace(floor);
+        var a = NullIfWhiteSpace(apartment);
+
+        if (c is null && t is null && b is null && f is null && a is null)
+            throw new ValidationException("اكتب الرقم الإنشائي أو بيانات الموقع (المصطبة / المبنى / الدور / الشقة) على الأقل.");
+
+        Check.Defined(status, "حالة الوحدة");
+        await EnsureOwnerExists(ownerId, ct);
+
+        // Two units with the same construction number would make permit matching ambiguous.
+        if (c is not null)
+        {
+            var lower = c.ToLowerInvariant();
+            if (await db.Units.AnyAsync(u => u.ConstructionNumber != null && u.ConstructionNumber.ToLower() == lower && u.Id != exceptId, ct))
+                throw new ValidationException("الرقم الإنشائي مسجل لوحدة أخرى.");
+        }
+
+        if (t is not null && b is not null && f is not null && a is not null)
+        {
+            var (tl, bl, fl, al) = (t.ToLowerInvariant(), b.ToLowerInvariant(), f.ToLowerInvariant(), a.ToLowerInvariant());
+            if (await db.Units.AnyAsync(u => u.Id != exceptId && u.Terrace != null && u.Building != null && u.Floor != null && u.Apartment != null
+                    && u.Terrace.ToLower() == tl && u.Building.ToLower() == bl && u.Floor.ToLower() == fl && u.Apartment.ToLower() == al, ct))
+                throw new ValidationException("توجد وحدة مسجلة بنفس المصطبة والمبنى والدور والشقة.");
+        }
     }
 
     private async Task EnsureOwnerExists(Guid? ownerId, CancellationToken ct)

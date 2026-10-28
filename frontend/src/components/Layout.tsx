@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { DemoBanner } from './DemoBanner'
+import { GlobalErrors } from './GlobalErrors'
 
 function roleLabel(roles: string[]) {
   if (roles.includes('Admin')) return 'مدير النظام'
@@ -135,6 +136,7 @@ export function Layout() {
 
       <main className="main">
         <DemoBanner />
+        <GlobalErrors />
         <Outlet />
       </main>
 

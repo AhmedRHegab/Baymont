@@ -42,13 +42,19 @@ public class OwnerService(IAppDbContext db, ICurrentUser currentUser)
 
     public async Task<OwnerDetailDto> CreateAsync(CreateOwnerRequest request, CancellationToken ct = default)
     {
+        Check.Required(request.FullName, "اسم المالك");
+        Check.Phone(request.Phone, "رقم الموبايل");
+        var code = string.IsNullOrWhiteSpace(request.InternalCode)
+            // The random tail keeps two owners created in the same second from getting the same code.
+            ? $"OWN-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..4].ToUpperInvariant()}"
+            : request.InternalCode.Trim();
+        await EnsureCodeUnique(code, Guid.Empty, ct);
+
         var now = DateTimeOffset.UtcNow;
         var owner = new Owner
         {
             Id = Guid.NewGuid(),
-            InternalCode = string.IsNullOrWhiteSpace(request.InternalCode)
-                ? $"OWN-{DateTime.UtcNow:yyyyMMddHHmmss}"
-                : request.InternalCode.Trim(),
+            InternalCode = code,
             FullName = request.FullName.Trim(),
             Phone = NullIfWhiteSpace(request.Phone),
             Notes = NullIfWhiteSpace(request.Notes),
@@ -69,9 +75,12 @@ public class OwnerService(IAppDbContext db, ICurrentUser currentUser)
         if (owner.RowVersion != request.RowVersion)
             throw new ConcurrencyException();
 
-        owner.InternalCode = string.IsNullOrWhiteSpace(request.InternalCode)
-            ? owner.InternalCode
-            : request.InternalCode.Trim();
+        Check.Required(request.FullName, "اسم المالك");
+        Check.Phone(request.Phone, "رقم الموبايل");
+        var newCode = string.IsNullOrWhiteSpace(request.InternalCode) ? owner.InternalCode : request.InternalCode.Trim();
+        if (!string.Equals(newCode, owner.InternalCode, StringComparison.OrdinalIgnoreCase))
+            await EnsureCodeUnique(newCode, owner.Id, ct);
+        owner.InternalCode = newCode;
         owner.FullName = request.FullName.Trim();
         owner.Phone = NullIfWhiteSpace(request.Phone);
         owner.Notes = NullIfWhiteSpace(request.Notes);
@@ -88,6 +97,13 @@ public class OwnerService(IAppDbContext db, ICurrentUser currentUser)
         SoftDelete.Apply(owner, currentUser.UserId);
         owner.UpdatedAt = DateTimeOffset.UtcNow;
         await SaveAsync(ct);
+    }
+
+    private async Task EnsureCodeUnique(string code, Guid exceptId, CancellationToken ct)
+    {
+        var lower = code.ToLowerInvariant();
+        if (await db.Owners.AnyAsync(o => o.InternalCode.ToLower() == lower && o.Id != exceptId, ct))
+            throw new ValidationException("الرقم الداخلي مستخدم لمالك آخر. اختر رقماً مختلفاً أو اتركه فارغاً.");
     }
 
     private async Task SaveAsync(CancellationToken ct)

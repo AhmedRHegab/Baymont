@@ -96,9 +96,12 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
     private static void ApplyScalars(Contractor c, SaveContractorRequest r)
     {
         if (string.IsNullOrWhiteSpace(r.CompanyName))
-            throw new ArgumentException("اسم الشركة مطلوب.");
+            throw new ValidationException("اسم الشركة مطلوب.");
         if (string.IsNullOrWhiteSpace(r.ContractorName))
-            throw new ArgumentException("اسم المقاول مطلوب.");
+            throw new ValidationException("اسم المقاول مطلوب.");
+
+        Check.Phone(r.Phone, "هاتف المقاول");
+        Check.Date(r.WorkStartDate, "تاريخ استلام العمل");
 
         c.CompanyName = r.CompanyName.Trim();
         c.ContractorName = r.ContractorName.Trim();
@@ -110,10 +113,17 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
 
     private void ApplyChildren(Contractor c, SaveContractorRequest r)
     {
+        // A sheet with thousands of rows is a mistake, not a contractor.
+        LimitCount(r.Workers?.Count, 500, "العمال");
+        LimitCount(r.Vehicles?.Count, 100, "السيارات");
+        LimitCount(r.Equipment?.Count, 200, "المعدات");
+        LimitCount(r.Materials?.Count, 200, "الخامات");
+        LimitCount(r.Entries?.Count, 200, "سجلات الدخول والخروج");
+
         Sync(c.Workers, r.Workers, d => d.Id,
             d =>
             {
-                if (string.IsNullOrWhiteSpace(d.Name)) throw new ArgumentException("اسم العامل مطلوب.");
+                if (string.IsNullOrWhiteSpace(d.Name)) throw new ValidationException("اسم العامل مطلوب.");
             },
             (e, d) =>
             {
@@ -128,7 +138,7 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
             d =>
             {
                 if (string.IsNullOrEmpty(PlateNormalizer.Normalize(d.PlateNumber)))
-                    throw new ArgumentException("رقم اللوحة مطلوب.");
+                    throw new ValidationException("رقم اللوحة مطلوب.");
             },
             (e, d) =>
             {
@@ -141,8 +151,8 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
         Sync(c.Equipment, r.Equipment, d => d.Id,
             d =>
             {
-                if (string.IsNullOrWhiteSpace(d.Type)) throw new ArgumentException("نوع المعدة مطلوب.");
-                if (!Enum.IsDefined(d.Category)) throw new ArgumentException("تصنيف المعدة غير صالح.");
+                if (string.IsNullOrWhiteSpace(d.Type)) throw new ValidationException("نوع المعدة مطلوب.");
+                if (!Enum.IsDefined(d.Category)) throw new ValidationException("تصنيف المعدة غير صالح.");
             },
             (e, d) =>
             {
@@ -157,7 +167,7 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
         Sync(c.Materials, r.Materials, d => d.Id,
             d =>
             {
-                if (string.IsNullOrWhiteSpace(d.Description)) throw new ArgumentException("وصف الخامة مطلوب.");
+                if (string.IsNullOrWhiteSpace(d.Description)) throw new ValidationException("وصف الخامة مطلوب.");
             },
             (e, d) =>
             {
@@ -167,7 +177,14 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
             });
 
         Sync(c.Entries, r.Entries, d => d.Id,
-            _ => { },
+            d =>
+            {
+                Check.Date(d.EntryDate, "تاريخ الدخول");
+                Check.Date(d.ExitDate, "تاريخ الخروج");
+                if (d.ExitDate is not null && d.EntryDate is null)
+                    throw new ValidationException("اكتب تاريخ الدخول قبل تاريخ الخروج.");
+                Check.Order(d.EntryDate, d.ExitDate, "تاريخ الخروج قبل تاريخ الدخول.");
+            },
             (e, d) =>
             {
                 e.EntryDate = d.EntryDate;
@@ -214,6 +231,11 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
                 apply(entity, dto);
             }
         }
+    }
+
+    private static void LimitCount(int? count, int max, string what)
+    {
+        if (count > max) throw new ValidationException($"عدد {what} كبير جداً. الحد الأقصى {max}.");
     }
 
     private async Task SaveAsync(CancellationToken ct)

@@ -106,7 +106,7 @@ export function OwnerPage() {
         <label>
           الاسم الكامل *
           <span className="field-help">اكتب اسم المالك كما هو معروف عند الأمن</span>
-          <input
+          <input maxLength={256}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
@@ -117,7 +117,7 @@ export function OwnerPage() {
         <label>
           رقم داخلي
           <span className="field-help">اختياري — إن لم تكتبه سيتم توليده تلقائياً</span>
-          <input
+          <input maxLength={64}
             value={internalCode}
             onChange={(e) => setInternalCode(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -126,7 +126,7 @@ export function OwnerPage() {
         </label>
         <label>
           رقم الهاتف
-          <input
+          <input maxLength={64} pattern="[0-9٠-٩+ ,.،\/\(\)\-]*" title="اكتب أرقاماً فقط (يمكن استخدام + و - والمسافة)."
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -136,7 +136,7 @@ export function OwnerPage() {
         </label>
         <label>
           ملاحظات
-          <textarea
+          <textarea maxLength={2000}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={!canEdit && !isNew}

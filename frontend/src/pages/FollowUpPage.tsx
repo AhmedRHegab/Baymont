@@ -71,7 +71,7 @@ export function FollowUpPage() {
         </div>
         <label className="form-grid">
           <span>بداية الجدول (أي يوم)</span>
-          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={start} onChange={(e) => setStart(e.target.value)} />
         </label>
         <div className="table-scroll">
           <table className="table">

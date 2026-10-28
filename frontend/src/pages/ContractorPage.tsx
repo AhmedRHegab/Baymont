@@ -10,6 +10,7 @@ import { PhotoField } from '../components/PhotoField'
 import { Toast } from '../components/Toast'
 import { useAuth } from '../hooks/useAuth'
 import { equipmentCategories } from '../lib/lookups'
+import { endBeforeStart } from '../lib/validation'
 import {
   ApiError,
   type ContractorEntry,
@@ -171,6 +172,16 @@ export function ContractorPage() {
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    for (const [i, en] of entries.entries()) {
+      if (en.exitDate && !en.entryDate) {
+        setError(`سجل الدخول والخروج رقم ${i + 1}: اكتب تاريخ الدخول قبل تاريخ الخروج.`)
+        return
+      }
+      if (endBeforeStart(en.entryDate, en.exitDate)) {
+        setError(`سجل الدخول والخروج رقم ${i + 1}: تاريخ الخروج قبل تاريخ الدخول.`)
+        return
+      }
+    }
     saveMutation.mutate()
   }
 
@@ -193,28 +204,28 @@ export function ContractorPage() {
         <section className="card form-grid">
           <label>
             اسم الشركة *
-            <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} required disabled={ro} autoFocus={isNew} />
+            <input maxLength={256} value={companyName} onChange={(e) => setCompanyName(e.target.value)} required disabled={ro} autoFocus={isNew} />
           </label>
           <label>
             اسم المقاول *
-            <input value={contractorName} onChange={(e) => setContractorName(e.target.value)} required disabled={ro} />
+            <input maxLength={256} value={contractorName} onChange={(e) => setContractorName(e.target.value)} required disabled={ro} />
           </label>
           <label>
             الهاتف
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={ro} inputMode="tel" />
+            <input maxLength={64} pattern="[0-9٠-٩+ ,.،\/\(\)\-]*" title="اكتب أرقاماً فقط (يمكن استخدام + و - والمسافة)." value={phone} onChange={(e) => setPhone(e.target.value)} disabled={ro} inputMode="tel" />
           </label>
           <label>
             التكليف (العمل المطلوب)
-            <textarea value={assignment} onChange={(e) => setAssignment(e.target.value)} disabled={ro} rows={2} />
+            <textarea maxLength={2000} value={assignment} onChange={(e) => setAssignment(e.target.value)} disabled={ro} rows={2} />
           </label>
           <label>
             تاريخ استلام العمل
-            <input type="date" value={workStartDate} onChange={(e) => setWorkStartDate(e.target.value)} disabled={ro} />
+            <input type="date" min="2000-01-01" max="2100-12-31" value={workStartDate} onChange={(e) => setWorkStartDate(e.target.value)} disabled={ro} />
           </label>
           <div className="banner info">عدد العمالة: <strong>{workers.length}</strong></div>
           <label>
             ملاحظات
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} disabled={ro} rows={2} />
+            <textarea maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} disabled={ro} rows={2} />
           </label>
         </section>
 
@@ -232,15 +243,15 @@ export function ContractorPage() {
               <div className="form-grid">
                 <label>
                   اسم العامل *
-                  <input value={w.name} onChange={(e) => set({ name: e.target.value })} required disabled={ro} />
+                  <input maxLength={256} value={w.name} onChange={(e) => set({ name: e.target.value })} required disabled={ro} />
                 </label>
                 <label>
                   الوظيفة
-                  <input value={w.jobTitle ?? ''} onChange={(e) => set({ jobTitle: e.target.value })} disabled={ro} />
+                  <input maxLength={128} value={w.jobTitle ?? ''} onChange={(e) => set({ jobTitle: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   مكان السكن
-                  <input value={w.housing ?? ''} onChange={(e) => set({ housing: e.target.value })} disabled={ro} />
+                  <input maxLength={256} value={w.housing ?? ''} onChange={(e) => set({ housing: e.target.value })} disabled={ro} />
                 </label>
                 <PhotoField label="صورة البطاقة" value={w.idPhotoPath} disabled={ro} canView={canEdit} onChange={(p) => set({ idPhotoPath: p })} />
                 <PhotoField label="صورة الفيش الجنائي" value={w.criminalRecordPhotoPath} disabled={ro} canView={canEdit} onChange={(p) => set({ criminalRecordPhotoPath: p })} />
@@ -263,7 +274,7 @@ export function ContractorPage() {
               <div className="form-grid">
                 <label>
                   رقم اللوحة *
-                  <input value={v.plateNumber} onChange={(e) => set({ plateNumber: e.target.value })} required disabled={ro} />
+                  <input maxLength={64} value={v.plateNumber} onChange={(e) => set({ plateNumber: e.target.value })} required disabled={ro} />
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={v.isSiteServiceCar} onChange={(e) => set({ isSiteServiceCar: e.target.checked })} disabled={ro} />
@@ -271,7 +282,7 @@ export function ContractorPage() {
                 </label>
                 <label>
                   ملاحظات
-                  <input value={v.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} disabled={ro} />
+                  <input maxLength={2000} value={v.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} disabled={ro} />
                 </label>
               </div>
             )
@@ -292,11 +303,11 @@ export function ContractorPage() {
               <div className="form-grid">
                 <label>
                   نوع المعدة *
-                  <input value={m.type} onChange={(e) => set({ type: e.target.value })} required disabled={ro} />
+                  <input maxLength={128} value={m.type} onChange={(e) => set({ type: e.target.value })} required disabled={ro} />
                 </label>
                 <label>
                   رقم المعدة
-                  <input value={m.number ?? ''} onChange={(e) => set({ number: e.target.value })} disabled={ro} />
+                  <input maxLength={64} value={m.number ?? ''} onChange={(e) => set({ number: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   التصنيف
@@ -310,12 +321,12 @@ export function ContractorPage() {
                 </label>
                 <label>
                   تصريح حركة المعدة
-                  <input value={m.movementPermit ?? ''} onChange={(e) => set({ movementPermit: e.target.value })} disabled={ro} />
+                  <input maxLength={128} value={m.movementPermit ?? ''} onChange={(e) => set({ movementPermit: e.target.value })} disabled={ro} />
                 </label>
                 <PhotoField label="صورة المعدة (حالتها)" value={m.photoPath} disabled={ro} canView={canEdit} onChange={(p) => set({ photoPath: p })} />
                 <label>
                   ملاحظات
-                  <input value={m.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} disabled={ro} />
+                  <input maxLength={2000} value={m.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} disabled={ro} />
                 </label>
               </div>
             )
@@ -336,11 +347,11 @@ export function ContractorPage() {
               <div className="form-grid">
                 <label>
                   وصف الخامة *
-                  <input value={m.description} onChange={(e) => set({ description: e.target.value })} required disabled={ro} />
+                  <input maxLength={512} value={m.description} onChange={(e) => set({ description: e.target.value })} required disabled={ro} />
                 </label>
                 <label>
                   مكان التشوين / المخزن
-                  <input value={m.storageLocation ?? ''} onChange={(e) => set({ storageLocation: e.target.value })} disabled={ro} />
+                  <input maxLength={256} value={m.storageLocation ?? ''} onChange={(e) => set({ storageLocation: e.target.value })} disabled={ro} />
                 </label>
                 <PhotoField label="صورة الخامة" value={m.photoPath} disabled={ro} canView={canEdit} onChange={(p) => set({ photoPath: p })} />
               </div>
@@ -362,27 +373,27 @@ export function ContractorPage() {
               <div className="form-grid">
                 <label>
                   تاريخ الدخول
-                  <input type="date" value={en.entryDate ?? ''} onChange={(e) => set({ entryDate: e.target.value })} disabled={ro} />
+                  <input type="date" min="2000-01-01" max="2100-12-31" value={en.entryDate ?? ''} onChange={(e) => set({ entryDate: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   سبب الدخول
-                  <input value={en.entryReason ?? ''} onChange={(e) => set({ entryReason: e.target.value })} disabled={ro} />
+                  <input maxLength={512} value={en.entryReason ?? ''} onChange={(e) => set({ entryReason: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   تصريح الدخول
-                  <input value={en.entryPermit ?? ''} onChange={(e) => set({ entryPermit: e.target.value })} disabled={ro} />
+                  <input maxLength={128} value={en.entryPermit ?? ''} onChange={(e) => set({ entryPermit: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   تاريخ الخروج
-                  <input type="date" value={en.exitDate ?? ''} onChange={(e) => set({ exitDate: e.target.value })} disabled={ro} />
+                  <input type="date" min="2000-01-01" max="2100-12-31" value={en.exitDate ?? ''} onChange={(e) => set({ exitDate: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   سبب الخروج
-                  <input value={en.exitReason ?? ''} onChange={(e) => set({ exitReason: e.target.value })} disabled={ro} />
+                  <input maxLength={512} value={en.exitReason ?? ''} onChange={(e) => set({ exitReason: e.target.value })} disabled={ro} />
                 </label>
                 <label>
                   تصريح الخروج
-                  <input value={en.exitPermit ?? ''} onChange={(e) => set({ exitPermit: e.target.value })} disabled={ro} />
+                  <input maxLength={128} value={en.exitPermit ?? ''} onChange={(e) => set({ exitPermit: e.target.value })} disabled={ro} />
                 </label>
               </div>
             )

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { importApi, type ImportResult } from '../api/endpoints'
 import { ImportInstructions } from '../components/ImportInstructions'
 import { PageHeader } from '../components/PageHeader'
+import { checkFile, excelRule } from '../lib/validation'
 
 export function ImportPage() {
   const [helpOpen, setHelpOpen] = useState(false)
@@ -20,6 +21,13 @@ export function ImportPage() {
   async function onPick(picked?: File) {
     if (inputRef.current) inputRef.current.value = ''
     if (!picked) return
+    const problem = checkFile(picked, excelRule)
+    if (problem) {
+      setFile(null)
+      setResult(null)
+      setError(problem)
+      return
+    }
     setFile(picked)
     setResult(null)
     setError(null)
@@ -27,7 +35,7 @@ export function ImportPage() {
     try {
       setResult(await importApi.preview(picked))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل فحص الملف')
+      setError(err instanceof Error ? err.message : 'تعذر فحص الملف. حاول مرة أخرى.')
     } finally {
       setBusy(false)
     }
@@ -40,7 +48,7 @@ export function ImportPage() {
     try {
       setResult(await importApi.commit(file))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فشل الاستيراد')
+      setError(err instanceof Error ? err.message : 'تعذر الاستيراد. حاول مرة أخرى.')
     } finally {
       setBusy(false)
     }

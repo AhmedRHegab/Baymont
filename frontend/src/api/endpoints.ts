@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, postFile } from './client'
 import type {
   InboxStatus,
   Reservation,
@@ -138,14 +138,7 @@ export const reservationsApi = {
       `/api/reservations/dashboard?today=${today}${start ? `&start=${start}` : ''}`,
     ),
   pendingCount: () => api<{ count: number }>('/api/reservations/pending-count'),
-  import: async (file: File): Promise<ReservationImportResult> => {
-    const form = new FormData()
-    form.append('file', file)
-    const res = await fetch('/api/reservations/import', { method: 'POST', credentials: 'include', body: form })
-    const body = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error((body as { message?: string }).message ?? 'فشل رفع الملف')
-    return body as ReservationImportResult
-  },
+  import: (file: File) => postFile<ReservationImportResult>('/api/reservations/import', file),
 }
 
 export const inboxApi = {
@@ -161,14 +154,7 @@ export const demoApi = {
 
 export const uploadsApi = {
   url: (path: string) => `/api/uploads/${path}`,
-  upload: async (file: File) => {
-    const form = new FormData()
-    form.append('file', file)
-    const res = await fetch('/api/uploads', { method: 'POST', credentials: 'include', body: form })
-    const body = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(body.message ?? 'فشل رفع الملف')
-    return (body as { path: string }).path
-  },
+  upload: async (file: File) => (await postFile<{ path: string }>('/api/uploads', file)).path,
 }
 
 export const usersApi = {
@@ -195,17 +181,8 @@ export interface ImportResult {
   committed: boolean
 }
 
-async function postImport(path: string, file: File): Promise<ImportResult> {
-  const form = new FormData()
-  form.append('file', file)
-  const res = await fetch(path, { method: 'POST', credentials: 'include', body: form })
-  const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error((body as { message?: string }).message ?? 'فشل رفع الملف')
-  return body as ImportResult
-}
-
 export const importApi = {
   templateUrl: '/api/import/template',
-  preview: (file: File) => postImport('/api/import/preview', file),
-  commit: (file: File) => postImport('/api/import/commit', file),
+  preview: (file: File) => postFile<ImportResult>('/api/import/preview', file),
+  commit: (file: File) => postFile<ImportResult>('/api/import/commit', file),
 }

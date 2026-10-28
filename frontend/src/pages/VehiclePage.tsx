@@ -121,7 +121,7 @@ export function VehiclePage() {
         <label>
           رقم اللوحة *
           <span className="field-help">اكتب الرقم كما يظهر على السيارة</span>
-          <input
+          <input maxLength={64}
             value={plateNumber}
             onChange={(e) => setPlateNumber(e.target.value)}
             required
@@ -132,7 +132,7 @@ export function VehiclePage() {
         </label>
         <label>
           الماركة
-          <input
+          <input maxLength={64}
             value={make}
             onChange={(e) => setMake(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -141,7 +141,7 @@ export function VehiclePage() {
         </label>
         <label>
           الموديل
-          <input
+          <input maxLength={64}
             value={model}
             onChange={(e) => setModel(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -150,7 +150,7 @@ export function VehiclePage() {
         </label>
         <label>
           اللون
-          <input
+          <input maxLength={64}
             value={color}
             onChange={(e) => setColor(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -208,7 +208,7 @@ export function VehiclePage() {
 
         <label>
           ملاحظات
-          <textarea
+          <textarea maxLength={2000}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={!canEdit && !isNew}

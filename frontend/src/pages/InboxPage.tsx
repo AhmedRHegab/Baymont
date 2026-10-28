@@ -54,8 +54,7 @@ export function InboxPage() {
           </>
         ) : (
           <div className="banner error">
-            <strong>قارئ البريد غير مفعّل.</strong>{' '}
-            {data.lastError ?? 'لم يتم ضبط بريد الاستقبال بعد. اضبط Mail__User وMail__Password وMail__AllowedSenders في إعدادات الخادم.'}
+            <strong>قارئ البريد غير مفعّل</strong>
           </div>
         )}
       </section>

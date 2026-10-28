@@ -107,6 +107,10 @@ export function UnitPage() {
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    if (![constructionNumber, terrace, building, floor, apartment].some((v) => v.trim())) {
+      setError('اكتب الرقم الإنشائي أو بيانات الموقع (المصطبة / المبنى / الدور / الشقة) على الأقل.')
+      return
+    }
     saveMutation.mutate()
   }
 
@@ -129,7 +133,7 @@ export function UnitPage() {
         <label>
           الرقم الإنشائي
           <span className="field-help">الأهم للبحث عند البوابة</span>
-          <input
+          <input maxLength={64}
             value={constructionNumber}
             onChange={(e) => setConstructionNumber(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -138,7 +142,7 @@ export function UnitPage() {
         </label>
         <label>
           المصطبة
-          <input
+          <input maxLength={64}
             value={terrace}
             onChange={(e) => setTerrace(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -147,7 +151,7 @@ export function UnitPage() {
         </label>
         <label>
           المبنى
-          <input
+          <input maxLength={64}
             value={building}
             onChange={(e) => setBuilding(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -155,7 +159,7 @@ export function UnitPage() {
         </label>
         <label>
           الدور
-          <input
+          <input maxLength={32}
             value={floor}
             onChange={(e) => setFloor(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -163,7 +167,7 @@ export function UnitPage() {
         </label>
         <label>
           رقم الشقة
-          <input
+          <input maxLength={32}
             value={apartment}
             onChange={(e) => setApartment(e.target.value)}
             disabled={!canEdit && !isNew}
@@ -208,7 +212,7 @@ export function UnitPage() {
         )}
         <label>
           ملاحظات
-          <textarea
+          <textarea maxLength={2000}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             disabled={!canEdit && !isNew}

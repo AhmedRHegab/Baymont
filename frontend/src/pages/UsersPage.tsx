@@ -96,11 +96,11 @@ export function UsersPage() {
         <h2 style={{ margin: 0 }}>إضافة مستخدم جديد</h2>
         <label>
           اسم الدخول *
-          <input value={userName} onChange={(e) => setUserName(e.target.value)} required placeholder="gate2" />
+          <input maxLength={50} value={userName} onChange={(e) => setUserName(e.target.value)} required placeholder="gate2" />
         </label>
         <label>
           الاسم الظاهر *
-          <input
+          <input maxLength={128}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             required
@@ -110,7 +110,7 @@ export function UsersPage() {
         <label>
           كلمة المرور *
           <span className="field-help">8 أحرف على الأقل، مع حرف كبير ورقم ورمز</span>
-          <input
+          <input maxLength={128}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

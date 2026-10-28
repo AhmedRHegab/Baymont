@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { SESSION_EXPIRED_EVENT } from '../api/client'
 import { authApi } from '../api/endpoints'
 import type { UserDto } from '../types'
 
@@ -44,6 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  // The server says the login expired while the page was open: leave the screen and show the login page.
+  useEffect(() => {
+    const onExpired = () => setUser(null)
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired)
+  }, [])
 
   const login = useCallback(async (userName: string, password: string) => {
     const me = await authApi.login(userName, password)

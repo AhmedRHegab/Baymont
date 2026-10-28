@@ -144,11 +144,11 @@ export function DeliveryPage() {
       <form className="card form-grid" onSubmit={onSubmit}>
         <label>
           تاريخ التسليم
-          <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} required disabled={ro} />
+          <input type="date" min="2000-01-01" max="2100-12-31" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} required disabled={ro} />
         </label>
         <label>
           اسم مهندس التسليم *
-          <input value={engineer} onChange={(e) => setEngineer(e.target.value)} required disabled={ro} />
+          <input maxLength={256} value={engineer} onChange={(e) => setEngineer(e.target.value)} required disabled={ro} />
         </label>
 
         <SearchableSelect
@@ -165,11 +165,11 @@ export function DeliveryPage() {
         />
         <label>
           رقم الوحدة *
-          <input value={unitNumber} onChange={(e) => setUnitNumber(e.target.value)} required disabled={ro} />
+          <input maxLength={128} value={unitNumber} onChange={(e) => setUnitNumber(e.target.value)} required disabled={ro} />
         </label>
         <label>
           اسم العميل *
-          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} required disabled={ro} />
+          <input maxLength={256} value={customerName} onChange={(e) => setCustomerName(e.target.value)} required disabled={ro} />
         </label>
 
         <label className="check">
@@ -179,7 +179,7 @@ export function DeliveryPage() {
         {!isReceived && (
           <label>
             سبب عدم الاستلام *
-            <textarea value={reason} onChange={(e) => setReason(e.target.value)} required disabled={ro} rows={2} />
+            <textarea maxLength={1024} value={reason} onChange={(e) => setReason(e.target.value)} required disabled={ro} rows={2} />
           </label>
         )}
         <label className="check">
@@ -189,11 +189,11 @@ export function DeliveryPage() {
 
         <label>
           تعليقات
-          <textarea value={comments} onChange={(e) => setComments(e.target.value)} disabled={ro} rows={3} />
+          <textarea maxLength={2000} value={comments} onChange={(e) => setComments(e.target.value)} disabled={ro} rows={3} />
         </label>
         <label>
           شكاوى
-          <textarea value={complaints} onChange={(e) => setComplaints(e.target.value)} disabled={ro} rows={3} />
+          <textarea maxLength={2000} value={complaints} onChange={(e) => setComplaints(e.target.value)} disabled={ro} rows={3} />
         </label>
 
         {error && <div className="banner error">{error}</div>}

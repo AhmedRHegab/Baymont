@@ -155,6 +155,7 @@ export const inboxApi = {
 
 export const demoApi = {
   status: () => api<{ hasDemoData: boolean; records: number }>('/api/demo'),
+  load: () => api<{ created: number }>('/api/demo/load', { method: 'POST' }),
   clear: () => api<{ deleted: number }>('/api/demo/clear', { method: 'POST' }),
 }
 

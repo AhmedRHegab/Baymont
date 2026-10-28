@@ -15,6 +15,30 @@ namespace Baymont.Infrastructure.Seed;
 /// </summary>
 public static class DemoDataSeeder
 {
+    /// <summary>
+    /// Creates the sample data in one save and records every new row so it can be deleted again.
+    /// Used by the startup seeding and by the admin "load sample data" button.
+    /// </summary>
+    public static async Task<int> CreateAsync(AppDbContext db, CancellationToken ct = default)
+    {
+        Build(db);
+
+        // Remember every record we just added (children included) before saving.
+        var added = db.ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added)
+            .Select(e => (Type: e.Entity.GetType().Name, Id: (Guid)e.Property("Id").CurrentValue!))
+            .ToList();
+        foreach (var (type, id) in added)
+            db.DemoRecords.Add(new DemoRecord { Id = Guid.NewGuid(), EntityType = type, EntityId = id });
+
+        // The marker stops the startup seeding from running again, whatever happens to the sample data.
+        if (!await db.DemoRecords.AnyAsync(d => d.EntityType == DemoRecord.MarkerType, ct))
+            db.DemoRecords.Add(new DemoRecord { Id = Guid.NewGuid(), EntityType = DemoRecord.MarkerType, EntityId = Guid.Empty });
+
+        await db.SaveChangesAsync(ct);
+        return added.Count;
+    }
+
     public static async Task SeedAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
@@ -41,19 +65,8 @@ public static class DemoDataSeeder
             return;
         }
 
-        Build(db);
-
-        // Remember every record we just added (children included) before saving.
-        var added = db.ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Added)
-            .Select(e => (Type: e.Entity.GetType().Name, Id: (Guid)e.Property("Id").CurrentValue!))
-            .ToList();
-        foreach (var (type, id) in added)
-            db.DemoRecords.Add(new DemoRecord { Id = Guid.NewGuid(), EntityType = type, EntityId = id });
-        db.DemoRecords.Add(new DemoRecord { Id = Guid.NewGuid(), EntityType = DemoRecord.MarkerType, EntityId = Guid.Empty });
-
-        await db.SaveChangesAsync();
-        logger.LogInformation("Sample data created ({Count} records). An admin can delete it from the banner.", added.Count);
+        var count = await CreateAsync(db);
+        logger.LogInformation("Sample data created ({Count} records). An admin can delete it from the banner.", count);
     }
 
     private static void Build(AppDbContext db)

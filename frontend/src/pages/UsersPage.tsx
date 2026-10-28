@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { usersApi } from '../api/endpoints'
 import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
+import { DemoDataCard } from '../components/DemoDataCard'
 import { Toast } from '../components/Toast'
 
 const roleOptions = [
@@ -133,6 +134,8 @@ export function UsersPage() {
           </button>
         </div>
       </form>
+
+      <DemoDataCard />
     </div>
   )
 }

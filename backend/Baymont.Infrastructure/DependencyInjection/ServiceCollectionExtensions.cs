@@ -28,6 +28,9 @@ public static class ServiceCollectionExtensions
             options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
 
+        services.Configure<Mail.MailOptions>(configuration.GetSection("Mail"));
+        services.AddHostedService<Mail.InboxPollingService>();
+
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
         services
@@ -42,6 +45,7 @@ public static class ServiceCollectionExtensions
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
                 options.User.RequireUniqueEmail = false;
             })
+            .AddErrorDescriber<ArabicIdentityErrorDescriber>()
             .AddEntityFrameworkStores<AppDbContext>()
             .AddDefaultTokenProviders();
 

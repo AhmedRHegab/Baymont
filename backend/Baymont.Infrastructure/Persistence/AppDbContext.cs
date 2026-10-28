@@ -23,6 +23,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
     public DbSet<StaffEntry> StaffEntries => Set<StaffEntry>();
     public DbSet<ShiftAssignment> ShiftAssignments => Set<ShiftAssignment>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<ReservationMovement> ReservationMovements => Set<ReservationMovement>();
+    public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
+    public DbSet<DemoRecord> DemoRecords => Set<DemoRecord>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -209,6 +213,55 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Phone).HasMaxLength(64);
             e.Property(x => x.Notes).HasMaxLength(512);
             e.HasIndex(x => new { x.ShiftDate, x.Kind });
+        });
+
+        builder.Entity<Reservation>(e =>
+        {
+            e.ToTable("reservations");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.UnitCode).HasMaxLength(128).IsRequired();
+            e.Property(x => x.GuestNames).HasMaxLength(1024).IsRequired();
+            e.Property(x => x.Notes).HasMaxLength(1024);
+            e.Property(x => x.ReviewedBy).HasMaxLength(128);
+            e.Property(x => x.Source).HasMaxLength(16).IsRequired();
+            e.Property(x => x.SourceFrom).HasMaxLength(256);
+            e.Property(x => x.SourceSubject).HasMaxLength(512);
+            e.Property(x => x.SourceFileName).HasMaxLength(256);
+            e.Property(x => x.SourceMessageId).HasMaxLength(512);
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.CheckInDate);
+            e.HasIndex(x => x.UnitCode);
+            e.HasOne(x => x.Unit).WithMany().HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        builder.Entity<ReservationMovement>(e =>
+        {
+            e.ToTable("reservation_movements");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.ReservationId);
+            e.HasOne(x => x.Reservation).WithMany(r => r.Movements)
+                .HasForeignKey(x => x.ReservationId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DemoRecord>(e =>
+        {
+            e.ToTable("demo_records");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.EntityType).HasMaxLength(64).IsRequired();
+            e.HasIndex(x => x.EntityType);
+        });
+
+        builder.Entity<InboxMessage>(e =>
+        {
+            e.ToTable("inbox_messages");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.MessageId).HasMaxLength(512).IsRequired();
+            e.Property(x => x.FromAddress).HasMaxLength(256);
+            e.Property(x => x.Subject).HasMaxLength(512);
+            e.Property(x => x.Status).HasMaxLength(16).IsRequired();
+            e.Property(x => x.Detail).HasMaxLength(1024);
+            e.HasIndex(x => x.MessageId).IsUnique();
+            e.HasIndex(x => x.ProcessedAt);
         });
 
         builder.Entity<AuditLog>(e =>

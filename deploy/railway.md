@@ -14,6 +14,38 @@ The repo deploys from the root `Dockerfile` (see `railway.json`). Every push to 
    They are used only when the user does not exist yet; later changes go through the Users page.
 4. **Settings → Networking → Generate Domain.** Open it and log in as `admin`.
 
+## Permit emails (Gmail reader)
+
+Visit permits arrive by email as an `.xlsx` attachment. The app reads the mailbox every 5 minutes and puts the permits in the
+review queue (page **الحجوزات**). It stays off until these variables are set on the service:
+
+| Variable | Value |
+|----------|-------|
+| `Mail__User` | The Gmail address that receives the permits |
+| `Mail__Password` | A Google **App Password** for that account (not the normal password) |
+| `Mail__AllowedSenders` | Leadership addresses, comma separated. A whole domain works as `@company.com`. Mail from anyone else is never opened. |
+
+Optional: `Mail__PollSeconds` (default 300, minimum 60), `Mail__RequireAuthentication` (default `true`).
+
+**Create the App Password**
+1. In the Google account: **Security → 2-Step Verification**, turn it on.
+2. Open <https://myaccount.google.com/apppasswords>, name it "Baymont", and copy the 16-character password (no spaces).
+3. Put it in `Mail__Password` on Railway. Never put it in the repository.
+4. If your Google Workspace admin blocks App Passwords or IMAP, ask them to allow it.
+
+**Safety**
+- Only the allowed senders are read, and with `RequireAuthentication=true` the email must also pass Gmail's DMARC check, so a forged "From" is refused.
+  If the leadership domain has no DMARC and real permits show as "فشل التحقق من هوية المرسل" on the **البريد** page, set it to `false`; the review queue is the second safety net.
+- Every permit waits for a staff member to approve it. Nothing reaches the gate automatically.
+- Check **البريد** (Admin/Editor) to see what was read, ignored and why, and use "افحص البريد الآن" to check immediately.
+- Without email, an admin can still add a permit by hand from **الحجوزات → إدخال يدوي (للطوارئ)**.
+
+## Sample data
+
+A fresh volume starts with invented sample data and a yellow "بيانات تجريبية" banner, so the system can be shown to users.
+Before real use, an admin presses **حذف البيانات التجريبية** (it is permanent and does not touch real records), or set
+`Seed__DemoData=false` before the very first start to skip it.
+
 ## Things to know
 
 - **Single replica only.** SQLite is a file on one volume; keep `numReplicas` at 1.

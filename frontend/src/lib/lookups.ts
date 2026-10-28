@@ -30,6 +30,16 @@ export async function fetchUnitOptions(query: string): Promise<SelectOption[]> {
   }))
 }
 
+export const visitorTypes = [
+  { value: 1, label: 'استضافة' },
+  { value: 2, label: 'تأجير' },
+  { value: 3, label: 'سيلز' },
+  { value: 4, label: 'مفوض' },
+] as const
+
+export const visitorTypeLabel = (t?: number | null) =>
+  visitorTypes.find((v) => v.value === t)?.label ?? 'غير محدد'
+
 export const shiftPeriods = [
   { value: 1, label: 'الصباحية' },
   { value: 2, label: 'المسائية' },

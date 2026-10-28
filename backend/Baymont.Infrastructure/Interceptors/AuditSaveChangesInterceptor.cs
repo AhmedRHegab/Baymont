@@ -15,6 +15,8 @@ public class AuditSaveChangesInterceptor(ICurrentUser currentUser) : SaveChanges
         nameof(Unit),
         nameof(Vehicle),
         nameof(Delivery),
+        nameof(Reservation),
+        nameof(ReservationMovement),
         nameof(OvernightStay),
         nameof(StaffMember),
         nameof(StaffEntry),

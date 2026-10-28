@@ -448,6 +448,74 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.ToTable("deliveries", (string)null);
                 });
 
+            modelBuilder.Entity("Baymont.Domain.Entities.DemoRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType");
+
+                    b.ToTable("demo_records", (string)null);
+                });
+
+            modelBuilder.Entity("Baymont.Domain.Entities.InboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FromAddress")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MessageId")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PermitsCreated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ProcessedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("ReceivedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId")
+                        .IsUnique();
+
+                    b.HasIndex("ProcessedAt");
+
+                    b.ToTable("inbox_messages", (string)null);
+                });
+
             modelBuilder.Entity("Baymont.Domain.Entities.OvernightStay", b =>
                 {
                     b.Property<Guid>("Id")
@@ -534,6 +602,125 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.HasIndex("InternalCode");
 
                     b.ToTable("owners", (string)null);
+                });
+
+            modelBuilder.Entity("Baymont.Domain.Entities.Reservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("CheckInDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("CheckOutDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("FinalDepartureAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GuestNames")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("PeriodEstimated")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PersonsCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ReviewedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceFileName")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceFrom")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceMessageId")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("SourceSentAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceSubject")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UnitCode")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UnitId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckInDate");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UnitCode");
+
+                    b.HasIndex("UnitId");
+
+                    b.ToTable("reservations", (string)null);
+                });
+
+            modelBuilder.Entity("Baymont.Domain.Entities.ReservationMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("EnteredAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("ExitedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReservationId");
+
+                    b.ToTable("reservation_movements", (string)null);
                 });
 
             modelBuilder.Entity("Baymont.Domain.Entities.ShiftAssignment", b =>
@@ -991,6 +1178,27 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("Baymont.Domain.Entities.Reservation", b =>
+                {
+                    b.HasOne("Baymont.Domain.Entities.Unit", "Unit")
+                        .WithMany()
+                        .HasForeignKey("UnitId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("Baymont.Domain.Entities.ReservationMovement", b =>
+                {
+                    b.HasOne("Baymont.Domain.Entities.Reservation", "Reservation")
+                        .WithMany("Movements")
+                        .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reservation");
+                });
+
             modelBuilder.Entity("Baymont.Domain.Entities.StaffEntry", b =>
                 {
                     b.HasOne("Baymont.Domain.Entities.StaffMember", "StaffMember")
@@ -1098,6 +1306,11 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.Navigation("Units");
 
                     b.Navigation("Vehicles");
+                });
+
+            modelBuilder.Entity("Baymont.Domain.Entities.Reservation", b =>
+                {
+                    b.Navigation("Movements");
                 });
 
             modelBuilder.Entity("Baymont.Domain.Entities.StaffMember", b =>

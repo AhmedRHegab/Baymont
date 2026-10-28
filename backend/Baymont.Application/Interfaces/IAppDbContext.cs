@@ -19,6 +19,10 @@ public interface IAppDbContext
     DbSet<StaffMember> StaffMembers { get; }
     DbSet<StaffEntry> StaffEntries { get; }
     DbSet<ShiftAssignment> ShiftAssignments { get; }
+    DbSet<Reservation> Reservations { get; }
+    DbSet<ReservationMovement> ReservationMovements { get; }
+    DbSet<InboxMessage> InboxMessages { get; }
+    DbSet<DemoRecord> DemoRecords { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<AppUser> Users { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

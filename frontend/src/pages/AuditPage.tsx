@@ -22,6 +22,7 @@ const entityLabel: Record<string, string> = {
   ContractorMaterial: 'خامة مقاول',
   ContractorEntry: 'دخول/خروج مقاول',
   Delivery: 'تسليم',
+  Reservation: 'حجز',
   OvernightStay: 'مبيت مالك',
   StaffMember: 'موظف',
   StaffEntry: 'دخول/خروج موظف',

@@ -237,6 +237,16 @@ export interface OnSite {
     entryReason?: string | null
   }[]
   contractorWorkers: number
+  guests: {
+    id: string
+    guestNames: string
+    unitCode: string
+    type?: VisitorType | null
+    personsCount: number
+    enteredAt: string
+  }[]
+  guestPersons: number
+  totalPeople: number
 }
 
 export interface ShiftAssignment {
@@ -248,6 +258,94 @@ export interface ShiftAssignment {
   assignedWork?: string | null
   phone?: string | null
   notes?: string | null
+}
+
+export type VisitorType = 1 | 2 | 3 | 4
+export type ReservationStatus = 0 | 1 | 2
+
+export interface Reservation {
+  id: string
+  unitCode: string
+  unitId?: string | null
+  guestNames: string
+  personsCount: number
+  type?: VisitorType | null
+  checkInDate?: string | null
+  checkOutDate?: string | null
+  periodEstimated: boolean
+  notes?: string | null
+  status: ReservationStatus
+  isInside: boolean
+  finalDepartureAt?: string | null
+  movements: Movement[]
+  source: string
+  sourceFrom?: string | null
+  sourceSubject?: string | null
+  sourceFileName?: string | null
+  sourceSentAt?: string | null
+  createdAt: string
+}
+
+export interface Movement {
+  id: string
+  enteredAt: string
+  exitedAt?: string | null
+  isFinal: boolean
+}
+
+export interface CountPair {
+  reservations: number
+  persons: number
+}
+
+export interface WeekRow {
+  number: number
+  start: string
+  nextStart: string
+  permits: number
+  authorized: number
+  arrived: number
+  departed: number
+  present: number
+  late: number
+}
+
+export interface ReservationDashboard {
+  today: string
+  weekStart: string
+  pendingReview: number
+  thisWeekPermits: CountPair
+  thisWeekArrived: CountPair
+  thisWeekDeparted: CountPair
+  presentNow: CountPair
+  overdue: CountPair
+  followUp: Reservation[]
+  weeks: WeekRow[]
+}
+
+export interface ReservationImportResult {
+  created: number
+  duplicates: number
+  issues: { row: number; message: string }[]
+}
+
+export interface InboxStatus {
+  enabled: boolean
+  mailbox?: string | null
+  pollSeconds: number
+  lastPollAt?: string | null
+  lastError?: string | null
+  polling: boolean
+  messages: {
+    id: string
+    fromAddress?: string | null
+    subject?: string | null
+    receivedAt: string
+    processedAt: string
+    status: 'Imported' | 'Ignored' | 'Failed'
+    detail?: string | null
+    permitsCreated: number
+  }[]
 }
 
 export interface AuditLogDto {

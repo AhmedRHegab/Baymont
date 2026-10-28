@@ -9,6 +9,10 @@ import { DeliveryPage } from './pages/DeliveryPage'
 import { OvernightPage } from './pages/OvernightPage'
 import { ShiftsPage } from './pages/ShiftsPage'
 import { StaffPage } from './pages/StaffPage'
+import { FollowUpPage } from './pages/FollowUpPage'
+import { ReservationPage } from './pages/ReservationPage'
+import { ReservationsPage } from './pages/ReservationsPage'
+import { InboxPage } from './pages/InboxPage'
 import { ImportPage } from './pages/ImportPage'
 import { LoginPage } from './pages/LoginPage'
 import { OwnerPage } from './pages/OwnerPage'
@@ -62,6 +66,10 @@ export default function App() {
         <Route path="overnight" element={<OvernightPage />} />
         <Route path="staff" element={<StaffPage />} />
         <Route path="shifts" element={<ShiftsPage />} />
+        <Route path="reservations" element={<ReservationsPage />} />
+        <Route path="reservations/:id" element={<ReservationPage />} />
+        <Route path="follow-up" element={<FollowUpPage />} />
+        <Route path="inbox" element={<InboxPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route
           path="users"

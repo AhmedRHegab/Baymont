@@ -17,6 +17,8 @@ interface AuthContextValue {
   isAdmin: boolean
   /** Can record deliveries (handover engineers too). */
   canDeliver: boolean
+  /** Gate guards record arrivals and departures. */
+  canMove: boolean
   login: (userName: string, password: string) => Promise<void>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -59,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       canEdit: !!user?.roles.some((r) => r === 'Admin' || r === 'Editor'),
       isAdmin: !!user?.roles.includes('Admin'),
+      canMove: !!user?.roles.some((r) => r === 'Admin' || r === 'Editor' || r === 'SearchOnly'),
       canDeliver: !!user?.roles.some((r) => r === 'Admin' || r === 'Editor' || r === 'Overhead'),
       login,
       logout,

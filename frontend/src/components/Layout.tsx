@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { DemoBanner } from './DemoBanner'
 
 function roleLabel(roles: string[]) {
   if (roles.includes('Admin')) return 'مدير النظام'
@@ -52,6 +53,12 @@ export function Layout() {
             المقاولون
           </NavLink>
 
+          <NavLink to="/follow-up" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+            المتابعة
+          </NavLink>
+          <NavLink to="/reservations" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+            الحجوزات
+          </NavLink>
           <NavLink to="/overnight" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
             المبيت
           </NavLink>
@@ -93,6 +100,12 @@ export function Layout() {
             </NavLink>
           )}
 
+          {canEdit && (
+            <NavLink to="/inbox" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+              البريد
+            </NavLink>
+          )}
+
           {(isAdmin || canEdit) && (
             <NavLink to="/audit" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
               سجل العمليات
@@ -121,17 +134,21 @@ export function Layout() {
       </header>
 
       <main className="main">
+        <DemoBanner />
         <Outlet />
       </main>
 
       {moreOpen && (
         <div className="more-panel">
+          <NavLink to="/follow-up">المتابعة</NavLink>
+          <NavLink to="/reservations">الحجوزات</NavLink>
           <NavLink to="/contractors">المقاولون</NavLink>
           <NavLink to="/deliveries">التسليمات</NavLink>
           <NavLink to="/overnight">المبيت</NavLink>
           <NavLink to="/staff">الموظفون</NavLink>
           <NavLink to="/shifts">الورديات</NavLink>
           {canDeliver && !canEdit && <NavLink to="/deliveries/new">＋ إضافة تسليم</NavLink>}
+          {canEdit && <NavLink to="/inbox">البريد</NavLink>}
           {(isAdmin || canEdit) && <NavLink to="/audit">سجل العمليات</NavLink>}
           {isAdmin && <NavLink to="/users">المستخدمون</NavLink>}
           {isAdmin && <NavLink to="/import">استيراد ملف</NavLink>}

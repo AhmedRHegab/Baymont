@@ -3,6 +3,7 @@ using Baymont.Application.DependencyInjection;
 using Baymont.Infrastructure.DependencyInjection;
 using Baymont.Infrastructure.Identity;
 using Baymont.Infrastructure.Persistence;
+using Baymont.Infrastructure.Seed;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,7 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
     await db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     await IdentitySeed.SeedAsync(app.Services);
+    await DemoDataSeeder.SeedAsync(app.Services);
 }
 
 app.UseForwardedHeaders();

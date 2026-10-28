@@ -1,5 +1,9 @@
 import { api } from './client'
 import type {
+  InboxStatus,
+  Reservation,
+  ReservationDashboard,
+  ReservationImportResult,
   OnSite,
   OvernightReport,
   ShiftAssignment,
@@ -113,6 +117,45 @@ export const siteApi = {
   updateShift: (id: string, body: object) =>
     api<void>(`/api/shifts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   removeShift: (id: string) => api<void>(`/api/shifts/${id}`, { method: 'DELETE' }),
+}
+
+export const reservationsApi = {
+  list: (status: number, q = '') =>
+    api<Reservation[]>(`/api/reservations?status=${status}&q=${encodeURIComponent(q)}`),
+  get: (id: string) => api<Reservation>(`/api/reservations/${id}`),
+  create: (body: object) =>
+    api<Reservation>('/api/reservations', { method: 'POST', body: JSON.stringify(body) }),
+  update: (id: string, body: object) =>
+    api<Reservation>(`/api/reservations/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  reject: (id: string) => api<void>(`/api/reservations/${id}/reject`, { method: 'POST' }),
+  remove: (id: string) => api<void>(`/api/reservations/${id}`, { method: 'DELETE' }),
+  enter: (id: string) => api<void>(`/api/reservations/${id}/enter`, { method: 'POST' }),
+  exit: (id: string) => api<void>(`/api/reservations/${id}/exit`, { method: 'POST' }),
+  finalLeave: (id: string) => api<void>(`/api/reservations/${id}/final-leave`, { method: 'POST' }),
+  undo: (id: string) => api<void>(`/api/reservations/${id}/undo`, { method: 'POST' }),
+  dashboard: (today: string, start?: string) =>
+    api<ReservationDashboard>(
+      `/api/reservations/dashboard?today=${today}${start ? `&start=${start}` : ''}`,
+    ),
+  pendingCount: () => api<{ count: number }>('/api/reservations/pending-count'),
+  import: async (file: File): Promise<ReservationImportResult> => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/reservations/import', { method: 'POST', credentials: 'include', body: form })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error((body as { message?: string }).message ?? 'فشل رفع الملف')
+    return body as ReservationImportResult
+  },
+}
+
+export const inboxApi = {
+  get: () => api<InboxStatus>('/api/inbox'),
+  check: () => api<void>('/api/inbox/check', { method: 'POST' }),
+}
+
+export const demoApi = {
+  status: () => api<{ hasDemoData: boolean; records: number }>('/api/demo'),
+  clear: () => api<{ deleted: number }>('/api/demo/clear', { method: 'POST' }),
 }
 
 export const uploadsApi = {

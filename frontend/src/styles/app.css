@@ -1202,3 +1202,61 @@ button {
   background: var(--ok-soft);
   color: var(--ok);
 }
+
+/* Reservations follow-up */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.8rem;
+}
+
+.stat {
+  background: var(--surface);
+}
+
+.stat.ok {
+  background: var(--ok-soft);
+}
+
+.stat.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.stat-numbers {
+  display: flex;
+  gap: 1.2rem;
+  font-size: 1.05rem;
+}
+
+.stat-numbers b {
+  font-size: 2rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table .late {
+  color: var(--danger);
+  font-weight: 800;
+}
+
+.table .current-week {
+  background: var(--accent-soft);
+}
+
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 16px;
+  border: 2px dashed #c98a1a;
+  background: #fff6e0;
+  color: #6b4500;
+  font-weight: 600;
+}

@@ -31,6 +31,18 @@ Users created on first start (passwords come from the `Seed` section of `appsett
 - `admin` (Admin)
 - `gate` (SearchOnly)
 
+## Sample data
+
+On the first start of an **empty** database the app creates invented sample data (owners, units, contractors, deliveries,
+permits in every state, staff, shifts) so the screens can be shown and practised on. A yellow banner marks it, and an admin
+can hard-delete all of it with "حذف البيانات التجريبية". It is never created again afterwards, and never added to a database
+that already has records. To turn it off completely set `Seed:DemoData` to `false` (or the variable `Seed__DemoData=false`).
+
+## Permit emails
+
+Visit permits are read from a Gmail mailbox (IMAP + App Password) and wait in a review queue; see
+[deploy/railway.md](deploy/railway.md#permit-emails-gmail-reader) for the `Mail__*` settings.
+
 ## Deploy
 
 - **Railway** (Docker, auto-deploy on push to `main`): see [deploy/railway.md](deploy/railway.md).

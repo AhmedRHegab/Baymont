@@ -1,6 +1,7 @@
 using Baymont.Application.Common;
 using Baymont.Application.Dtos;
 using Baymont.Application.Interfaces;
+using Baymont.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Baymont.Application.Services;
@@ -155,6 +156,22 @@ public class SearchService(IAppDbContext db)
                 $"تسليم وحدة {d.UnitNumber}",
                 $"{d.CustomerName} · {d.DeliveryDate:yyyy-MM-dd} · {(d.IsReceived ? "تم الاستلام" : "لم يتم")}",
                 50));
+
+        var reservations = await db.Reservations
+            .AsNoTracking()
+            .Where(r => r.Status == ReservationStatus.Approved &&
+                (r.UnitCode.ToLower().Contains(lower) || r.GuestNames.ToLower().Contains(lower)))
+            .OrderByDescending(r => r.CheckInDate)
+            .Take(25)
+            .ToListAsync(ct);
+
+        foreach (var r in reservations)
+            hits.Add(new SearchHitDto(
+                "reservation",
+                r.Id,
+                r.GuestNames,
+                $"حجز · وحدة {r.UnitCode} · {r.CheckInDate:yyyy-MM-dd} → {r.CheckOutDate:yyyy-MM-dd}",
+                string.Equals(r.UnitCode, q, StringComparison.OrdinalIgnoreCase) ? 96 : 52));
 
         var ranked = hits
             .OrderByDescending(h => h.Rank)

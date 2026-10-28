@@ -33,10 +33,16 @@ public record OnSiteStaffDto(
 public record OnSiteContractorDto(
     Guid Id, string CompanyName, string ContractorName, int WorkerCount, DateOnly? EntryDate, string? EntryReason);
 
+public record OnSiteGuestDto(
+    Guid Id, string GuestNames, string UnitCode, VisitorType? Type, int PersonsCount, DateTimeOffset EnteredAt);
+
 public record OnSiteDto(
     IReadOnlyList<OnSiteStaffDto> Staff,
     IReadOnlyList<OnSiteContractorDto> Contractors,
-    int ContractorWorkers);
+    int ContractorWorkers,
+    IReadOnlyList<OnSiteGuestDto> Guests,
+    int GuestPersons,
+    int TotalPeople);
 
 // ---- Shift roster ----
 public record SaveShiftAssignmentRequest(

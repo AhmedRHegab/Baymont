@@ -7,6 +7,7 @@ import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
 import { dayBounds, formatDateTime, todayLocal } from '../lib/dates'
+import { visitorTypeLabel } from '../lib/lookups'
 import type { StaffDto } from '../types'
 
 interface Form {
@@ -108,10 +109,20 @@ export function StaffPage() {
         ) : (
           <>
             <div className="banner info">
-              موظفون: <strong>{onSite.data?.staff.length ?? 0}</strong> · مقاولون:{' '}
-              <strong>{onSite.data?.contractors.length ?? 0}</strong> · عمال المقاولين:{' '}
-              <strong>{onSite.data?.contractorWorkers ?? 0}</strong>
+              <strong>إجمالي من بالموقع الآن: {onSite.data?.totalPeople ?? 0}</strong>
+              <br />
+              موظفون: <strong>{onSite.data?.staff.length ?? 0}</strong> · عمال المقاولين:{' '}
+              <strong>{onSite.data?.contractorWorkers ?? 0}</strong> ({onSite.data?.contractors.length ?? 0} مقاول) · ضيوف
+              الاستضافة والتصاريح: <strong>{onSite.data?.guestPersons ?? 0}</strong>
             </div>
+            {onSite.data?.guests.map((g) => (
+              <div className="sub-item" key={g.id}>
+                <strong>{g.guestNames}</strong>
+                <span className="muted">
+                  ضيف · {visitorTypeLabel(g.type)} · وحدة {g.unitCode} · {g.personsCount} شخص — دخل {formatDateTime(g.enteredAt)}
+                </span>
+              </div>
+            ))}
             {onSite.data?.staff.map((s) => (
               <div className="sub-item" key={s.id}>
                 <strong>{s.name}</strong>

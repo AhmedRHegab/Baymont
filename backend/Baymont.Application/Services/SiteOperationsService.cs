@@ -196,7 +196,19 @@ public class SiteOperationsService(IAppDbContext db)
         // A contractor with several open entries must only be counted once.
         contractors = contractors.GroupBy(c => c.Id).Select(g => g.OrderByDescending(c => c.EntryDate).First()).ToList();
 
-        return new OnSiteDto(staff, contractors, contractors.Sum(c => c.WorkerCount));
+        // Guests with a permit who are inside right now (they entered and have not walked out).
+        var guests = await db.ReservationMovements
+            .AsNoTracking()
+            .Where(m => m.ExitedAt == null && m.Reservation!.Status == ReservationStatus.Approved)
+            .OrderBy(m => m.Reservation!.GuestNames)
+            .Select(m => new OnSiteGuestDto(
+                m.ReservationId, m.Reservation!.GuestNames, m.Reservation.UnitCode, m.Reservation.Type,
+                m.Reservation.PersonsCount, m.EnteredAt))
+            .ToListAsync(ct);
+
+        var workers = contractors.Sum(c => c.WorkerCount);
+        var guestPersons = guests.Sum(g => g.PersonsCount);
+        return new OnSiteDto(staff, contractors, workers, guests, guestPersons, staff.Count + workers + guestPersons);
     }
 
     // ---------- Shift roster ----------

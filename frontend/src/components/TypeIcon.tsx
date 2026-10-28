@@ -47,4 +47,5 @@ export const typeLabels: Record<string, string> = {
   contractor: 'مقاول',
   staff: 'موظف',
   delivery: 'تسليم',
+  reservation: 'حجز',
 }

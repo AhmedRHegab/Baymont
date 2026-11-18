@@ -16,11 +16,15 @@ public record OvernightReportDto(
     DateOnly Date, ShiftPeriod Shift, int Total, IReadOnlyList<OvernightGroupDto> Groups);
 
 // ---- Staff ----
-public record SaveStaffRequest(string Name, string? Company, string? JobTitle, string? PlateNumber, string? Phone);
+public record SaveStaffRequest(
+    string Name, string? Company, string? JobTitle, string? PlateNumber, string? Phone,
+    string? NationalId = null, string? IdPhotoPath = null);
 
 public record StaffDto(
     Guid Id, string Name, string? Company, string? JobTitle, string? PlateNumber, string? Phone,
-    bool IsOnSite, DateTimeOffset? LastEntryAt, DateTimeOffset? LastExitAt);
+    bool IsOnSite, DateTimeOffset? LastEntryAt, DateTimeOffset? LastExitAt,
+    bool HasId = false, string? NationalId = null, DateOnly? BirthDate = null, PersonGender? Gender = null,
+    string? Governorate = null, string? IdPhotoPath = null);
 
 public record StaffLogDto(
     Guid Id, Guid StaffMemberId, string Name, string? Company, string? JobTitle,

@@ -28,6 +28,7 @@ function Stat({ title, hint, value, tone }: { title: string; hint: string; value
 export function FollowUpPage() {
   const today = todayLocal()
   const [start, setStart] = useState('')
+  const [allWeeks, setAllWeeks] = useState(false)
   const { data, isLoading } = useQuery({
     queryKey: ['reservation-dashboard', today, start],
     queryFn: () => reservationsApi.dashboard(today, start || undefined),
@@ -38,7 +39,7 @@ export function FollowUpPage() {
 
   return (
     <div className="stack">
-      <PageHeader title="متابعة الحجوزات" subtitle={`اليوم ${data.today} · أسبوع التصاريح من الجمعة ${data.weekStart} إلى الجمعة التي تليها`} showBack={false} />
+      <PageHeader title="متابعة الحجوزات" subtitle={`اليوم ${data.today.split('-').reverse().join('/')} · أسبوع التصاريح يبدأ الجمعة ${data.weekStart.split('-').reverse().slice(0, 2).join('/')}`} showBack={false} />
 
       {data.pendingReview > 0 && (
         <Link className="banner info" to="/reservations">
@@ -73,7 +74,30 @@ export function FollowUpPage() {
           <span>بداية الجدول (أي يوم)</span>
           <input type="date" min="2000-01-01" max="2100-12-31" value={start} onChange={(e) => setStart(e.target.value)} />
         </label>
-        <div className="table-scroll">
+        <div className="week-cards only-mobile">
+          {data.weeks.slice(0, allWeeks ? 13 : 4).map((w) => (
+            <div key={w.start} className={`week-card${w.start === data.weekStart ? ' current' : ''}`}>
+              <header>
+                <strong>أسبوع {String(w.number).padStart(2, '0')}</strong>
+                <span>
+                  {w.start.slice(5).replace('-', '/')} ← {w.nextStart.slice(5).replace('-', '/')}
+                </span>
+              </header>
+              <div className="week-cells">
+                <div className="week-cell"><b>{w.permits}</b><small>تصاريح</small></div>
+                <div className="week-cell"><b>{w.authorized}</b><small>المصرح لهم</small></div>
+                <div className="week-cell"><b>{w.arrived}</b><small>دخلوا</small></div>
+                <div className="week-cell"><b>{w.departed}</b><small>غادروا</small></div>
+                <div className="week-cell"><b>{w.present}</b><small>داخل الآن</small></div>
+                <div className={`week-cell${w.late > 0 ? ' late' : ''}`}><b>{w.late}</b><small>متأخرون</small></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button type="button" className="btn secondary only-mobile" onClick={() => setAllWeeks((v) => !v)}>
+          {allWeeks ? 'عرض أقل' : 'عرض كل الأسابيع (13)'}
+        </button>
+        <div className="table-scroll only-desktop">
           <table className="table">
             <thead>
               <tr>

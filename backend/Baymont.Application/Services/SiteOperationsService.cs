@@ -1,6 +1,7 @@
 using Baymont.Application.Common;
 using Baymont.Application.Dtos;
 using Baymont.Application.Interfaces;
+using Baymont.Domain.Constants;
 using Baymont.Domain.Entities;
 using Baymont.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Baymont.Application.Services;
 
 /// <summary>Overnight owners, staff entry/exit, the on-site report and the shift roster.</summary>
-public class SiteOperationsService(IAppDbContext db)
+public class SiteOperationsService(IAppDbContext db, ICurrentUser currentUser)
 {
     private const string NoTerrace = "بدون مصطبة";
 
@@ -99,13 +100,20 @@ public class SiteOperationsService(IAppDbContext db)
             .Select(s => new
             {
                 s.Id, s.Name, s.Company, s.JobTitle, s.PlateNumber, s.Phone,
+                s.NationalId, s.BirthDate, s.Gender, s.GovernorateCode, s.IdPhotoPath,
                 LastEntry = s.Entries.OrderByDescending(e => e.EntryAt).FirstOrDefault()
             })
             .ToListAsync(ct);
 
+        var canSeeIds = currentUser.IsInRole(AppRoles.Admin) || currentUser.IsInRole(AppRoles.Editor);
         return rows.Select(r => new StaffDto(
             r.Id, r.Name, r.Company, r.JobTitle, r.PlateNumber, r.Phone,
-            r.LastEntry is { ExitAt: null }, r.LastEntry?.EntryAt, r.LastEntry?.ExitAt)).ToList();
+            r.LastEntry is { ExitAt: null }, r.LastEntry?.EntryAt, r.LastEntry?.ExitAt,
+            HasId: r.NationalId is not null,
+            NationalId: canSeeIds ? r.NationalId : EgyptianNationalId.Mask(r.NationalId),
+            BirthDate: r.BirthDate, Gender: r.Gender,
+            Governorate: EgyptianNationalId.GovernorateName(r.GovernorateCode),
+            IdPhotoPath: canSeeIds ? r.IdPhotoPath : null)).ToList();
     }
 
     public async Task<Guid> CreateStaffAsync(SaveStaffRequest r, CancellationToken ct = default)
@@ -259,6 +267,13 @@ public class SiteOperationsService(IAppDbContext db)
         m.JobTitle = Clean(r.JobTitle);
         m.PlateNumber = Clean(r.PlateNumber);
         m.Phone = Clean(r.Phone);
+
+        var id = EgyptianNationalId.ParseOrNull(r.NationalId);
+        m.NationalId = id?.Number;
+        m.BirthDate = id?.BirthDate;
+        m.Gender = id?.Gender;
+        m.GovernorateCode = id?.GovernorateCode;
+        m.IdPhotoPath = UploadNames.Clean(r.IdPhotoPath);
     }
 
     private static void ApplyShift(ShiftAssignment a, SaveShiftAssignmentRequest r)

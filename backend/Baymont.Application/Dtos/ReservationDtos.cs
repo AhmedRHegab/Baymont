@@ -2,6 +2,20 @@ using Baymont.Domain.Enums;
 
 namespace Baymont.Application.Dtos;
 
+public record GuestDto(
+    Guid Id,
+    string Name,
+    /// <summary>The full number for admins and editors; masked ("**********5678") for everyone else.</summary>
+    string NationalId,
+    DateOnly? BirthDate,
+    PersonGender? Gender,
+    string? Governorate,
+    bool HasPhoto,
+    string? IdPhotoPath,
+    DateTimeOffset CreatedAt);
+
+public record SaveGuestRequest(string Name, string NationalId, string? IdPhotoPath);
+
 public record MovementDto(Guid Id, DateTimeOffset EnteredAt, DateTimeOffset? ExitedAt, bool IsFinal);
 
 public record ReservationDto(
@@ -19,6 +33,7 @@ public record ReservationDto(
     bool IsInside,
     DateTimeOffset? FinalDepartureAt,
     IReadOnlyList<MovementDto> Movements,
+    IReadOnlyList<GuestDto> Guests,
     string Source,
     string? SourceFrom,
     string? SourceSubject,

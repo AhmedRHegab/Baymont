@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { Icon } from './Icon'
 
 interface Props {
   title: string
@@ -12,19 +13,20 @@ export function PageHeader({ title, subtitle, showBack = true, backTo }: Props) 
 
   return (
     <div className="page-header">
+      {showBack && (
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="رجوع"
+          onClick={() => (backTo ? navigate(backTo) : navigate(-1))}
+        >
+          <Icon name="back" size={22} />
+        </button>
+      )}
       <div>
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
-      {showBack && (
-        <button
-          type="button"
-          className="btn secondary"
-          onClick={() => (backTo ? navigate(backTo) : navigate(-1))}
-        >
-          رجوع
-        </button>
-      )}
     </div>
   )
 }

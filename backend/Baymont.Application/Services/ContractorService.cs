@@ -1,6 +1,7 @@
 using Baymont.Application.Common;
 using Baymont.Application.Dtos;
 using Baymont.Application.Interfaces;
+using Baymont.Domain.Constants;
 using Baymont.Domain.Entities;
 using Baymont.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -132,6 +133,12 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
                 e.Housing = NullIfWhiteSpace(d.Housing);
                 e.IdPhotoPath = UploadNames.Clean(d.IdPhotoPath);
                 e.CriminalRecordPhotoPath = UploadNames.Clean(d.CriminalRecordPhotoPath);
+                // Optional. When given it must be a valid national number; the rest is worked out from it.
+                var id = EgyptianNationalId.ParseOrNull(d.NationalId);
+                e.NationalId = id?.Number;
+                e.BirthDate = id?.BirthDate;
+                e.Gender = id?.Gender;
+                e.GovernorateCode = id?.GovernorateCode;
             });
 
         Sync(c.Vehicles, r.Vehicles, d => d.Id,
@@ -233,6 +240,8 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
         }
     }
 
+    private bool CanSeeIds => currentUser.IsInRole(AppRoles.Admin) || currentUser.IsInRole(AppRoles.Editor);
+
     private static void LimitCount(int? count, int max, string what)
     {
         if (count > max) throw new ValidationException($"عدد {what} كبير جداً. الحد الأقصى {max}.");
@@ -250,7 +259,7 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
         }
     }
 
-    private static ContractorDetailDto MapDetail(Contractor c) => new(
+    private ContractorDetailDto MapDetail(Contractor c) => new(
         c.Id,
         c.CompanyName,
         c.ContractorName,
@@ -260,7 +269,10 @@ public class ContractorService(IAppDbContext db, ICurrentUser currentUser)
         c.Notes,
         c.RowVersion,
         c.Workers.OrderBy(x => x.Name)
-            .Select(x => new ContractorWorkerDto(x.Id, x.Name, x.JobTitle, x.Housing, x.IdPhotoPath, x.CriminalRecordPhotoPath))
+            .Select(x => new ContractorWorkerDto(
+                x.Id, x.Name, x.JobTitle, x.Housing, x.IdPhotoPath, x.CriminalRecordPhotoPath,
+                CanSeeIds ? x.NationalId : EgyptianNationalId.Mask(x.NationalId),
+                x.BirthDate, x.Gender, EgyptianNationalId.GovernorateName(x.GovernorateCode)))
             .ToList(),
         c.Vehicles.OrderBy(x => x.PlateNumber)
             .Select(x => new ContractorVehicleDto(x.Id, x.PlateNumber, x.IsSiteServiceCar, x.Notes))

@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { ConflictDialog } from '../components/ConflictDialog'
 import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
+import { IdCapture } from '../components/IdCapture'
 import { PhotoField } from '../components/PhotoField'
 import { Toast } from '../components/Toast'
 import { useAuth } from '../hooks/useAuth'
@@ -253,7 +254,12 @@ export function ContractorPage() {
                   مكان السكن
                   <input maxLength={256} value={w.housing ?? ''} onChange={(e) => set({ housing: e.target.value })} disabled={ro} />
                 </label>
-                <PhotoField label="صورة البطاقة" value={w.idPhotoPath} disabled={ro} canView={canEdit} onChange={(p) => set({ idPhotoPath: p })} />
+                <IdCapture
+                  value={{ nationalId: w.nationalId ?? '', photoPath: w.idPhotoPath }}
+                  disabled={ro}
+                  canViewPhoto={canEdit}
+                  onChange={(v) => set({ nationalId: v.nationalId, idPhotoPath: v.photoPath ?? null })}
+                />
                 <PhotoField label="صورة الفيش الجنائي" value={w.criminalRecordPhotoPath} disabled={ro} canView={canEdit} onChange={(p) => set({ criminalRecordPhotoPath: p })} />
               </div>
             )

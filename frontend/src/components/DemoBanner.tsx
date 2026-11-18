@@ -31,12 +31,10 @@ export function DemoBanner() {
   return (
     <>
       <div className="demo-banner" role="status">
-        <span>
-          🧪 <strong>بيانات تجريبية للتدريب والعرض فقط</strong> — الأسماء والأرقام مخترعة وليست حقيقية.
-        </span>
+        <span>🧪 بيانات تجريبية للتدريب فقط</span>
         {isAdmin && (
-          <button type="button" className="btn danger" onClick={() => setConfirm(true)}>
-            حذف البيانات التجريبية
+          <button type="button" className="btn danger sm" onClick={() => setConfirm(true)}>
+            حذفها
           </button>
         )}
       </div>

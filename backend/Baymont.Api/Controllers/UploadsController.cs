@@ -7,17 +7,28 @@ namespace Baymont.Api.Controllers;
 
 /// <summary>Photos/PDFs (ID cards, criminal records, equipment). Stored on disk, never served statically.</summary>
 [ApiController]
-[Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Editor}")]
 [Route("api/uploads")]
 public class UploadsController(IWebHostEnvironment env) : ControllerBase
 {
     private const long MaxBytes = 8 * 1024 * 1024;
+    private const string Reviewers = $"{AppRoles.Admin},{AppRoles.Editor}";
+    // The gate guards photograph the ID cards of the people entering.
+    private const string Gate = $"{AppRoles.Admin},{AppRoles.Editor},{AppRoles.SearchOnly}";
 
     private string Folder => Path.Combine(env.ContentRootPath, "App_Data", "uploads");
 
     [HttpPost]
+    [Authorize(Roles = Reviewers)]
     [RequestSizeLimit(MaxBytes + 1024 * 1024)]
-    public async Task<IActionResult> Upload(IFormFile? file, CancellationToken ct)
+    public Task<IActionResult> Upload(IFormFile? file, CancellationToken ct) => Save(file, imagesOnly: false, ct);
+
+    /// <summary>A photo of an ID card. Anyone at the gate may add one; only admins and editors can open it afterwards.</summary>
+    [HttpPost("id")]
+    [Authorize(Roles = Gate)]
+    [RequestSizeLimit(MaxBytes + 1024 * 1024)]
+    public Task<IActionResult> UploadId(IFormFile? file, CancellationToken ct) => Save(file, imagesOnly: true, ct);
+
+    private async Task<IActionResult> Save(IFormFile? file, bool imagesOnly, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { message = "لم يتم اختيار ملف." });
@@ -25,8 +36,8 @@ public class UploadsController(IWebHostEnvironment env) : ControllerBase
             return BadRequest(new { message = "حجم الملف أكبر من 8 ميجابايت." });
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!UploadNames.AllowedExtensions.Contains(ext))
-            return BadRequest(new { message = "النوع غير مدعوم. المسموح: صور أو PDF." });
+        if (!UploadNames.AllowedExtensions.Contains(ext) || (imagesOnly && ext == ".pdf"))
+            return BadRequest(new { message = imagesOnly ? "النوع غير مدعوم. المسموح: صورة." : "النوع غير مدعوم. المسموح: صور أو PDF." });
 
         var header = new byte[12];
         await using (var peek = file.OpenReadStream())
@@ -47,6 +58,7 @@ public class UploadsController(IWebHostEnvironment env) : ControllerBase
     }
 
     [HttpGet("{name}")]
+    [Authorize(Roles = Reviewers)]
     public IActionResult Get(string name)
     {
         // Only our generated names are accepted, so no path traversal is possible.

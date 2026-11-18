@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Baymont.Application.Dtos;
 using Baymont.Domain.Enums;
 using ClosedXML.Excel;
@@ -16,7 +17,7 @@ public record ParsedReservations(IReadOnlyList<ParsedReservation> Rows, IReadOnl
 /// "Deal Name" (unit code) and "Full Name" are required; "Check In", "Check Out" and "Type" are optional.
 /// Rows hidden by the sender's filter are skipped, and every sheet that has the headers is read.
 /// </summary>
-public static class ReservationExcelParser
+public static partial class ReservationExcelParser
 {
     private static readonly string[] UnitHeaders = ["dealname", "unitcode", "unit", "رقمالوحدة", "كودالوحدة", "الوحدة"];
     private static readonly string[] NameHeaders = ["fullname", "name", "guestname", "guestnames", "guests", "الاسم", "اسمالضيف", "الاسماء", "الأسماء"];
@@ -30,7 +31,7 @@ public static class ReservationExcelParser
         "dd/MM/yyyy HH:mm", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ss"
     ];
 
-    public static ParsedReservations Parse(Stream file)
+    public static ParsedReservations Parse(Stream file, DateOnly? reference = null)
     {
         var rows = new List<ParsedReservation>();
         var issues = new List<ImportRowIssueDto>();
@@ -45,7 +46,7 @@ public static class ReservationExcelParser
                 var cols = FindHeader(ws, out var headerRow);
                 if (cols is null) continue;
                 foundSheet = true;
-                ReadSheet(ws, headerRow, cols, rows, issues);
+                ReadSheet(ws, headerRow, cols, reference ?? DateOnly.FromDateTime(DateTime.UtcNow), rows, issues);
             }
 
             if (!foundSheet)
@@ -77,10 +78,13 @@ public static class ReservationExcelParser
                 if (h.Length == 0) continue;
                 if (unit is null && UnitHeaders.Contains(h)) unit = c;
                 else if (name is null && NameHeaders.Contains(h)) name = c;
-                else if (ci is null && CheckInHeaders.Contains(h)) ci = c;
-                else if (co is null && CheckOutHeaders.Contains(h)) co = c;
+                else if (ci is null && (CheckInHeaders.Contains(h) || h.Contains("checkin"))) ci = c;
+                else if (co is null && (CheckOutHeaders.Contains(h) || h.Contains("checkout"))) co = c;
                 else if (ty is null && TypeHeaders.Contains(h)) ty = c;
             }
+
+            if (ci is null && co is not null && co > 1 && ws.Cell(r, co.Value - 1).GetString().Trim().Length == 0)
+                ci = co - 1;
 
             if (unit is not null && name is not null)
             {
@@ -91,7 +95,7 @@ public static class ReservationExcelParser
         return null;
     }
 
-    private static void ReadSheet(IXLWorksheet ws, int headerRow, Columns cols,
+    private static void ReadSheet(IXLWorksheet ws, int headerRow, Columns cols, DateOnly reference,
         List<ParsedReservation> rows, List<ImportRowIssueDto> issues)
     {
         var last = ws.LastRowUsed()?.RowNumber() ?? headerRow;
@@ -111,8 +115,8 @@ public static class ReservationExcelParser
             if (names.Length > 1024) { issues.Add(new ImportRowIssueDto(r, $"{label}: الأسماء طويلة جداً، تم تجاهل السطر.")); continue; }
             if (CountPersons(names) > 100) { issues.Add(new ImportRowIssueDto(r, $"{label}: عدد الأسماء أكبر من 100، تم تجاهل السطر.")); continue; }
 
-            var checkIn = cols.CheckIn is null ? null : ParseDate(ws.Cell(r, cols.CheckIn.Value), out var badIn);
-            var checkOut = cols.CheckOut is null ? null : ParseDate(ws.Cell(r, cols.CheckOut.Value), out var badOut);
+            var checkIn = cols.CheckIn is null ? null : ParseDate(ws.Cell(r, cols.CheckIn.Value), reference, out var badIn);
+            var checkOut = cols.CheckOut is null ? null : ParseDate(ws.Cell(r, cols.CheckOut.Value), reference, out var badOut);
             if (cols.CheckIn is not null && checkIn is null && !ws.Cell(r, cols.CheckIn.Value).IsEmpty())
                 issues.Add(new ImportRowIssueDto(r, $"{label}: تاريخ الوصول غير مفهوم، أكمله أثناء المراجعة."));
             if (cols.CheckOut is not null && checkOut is null && !ws.Cell(r, cols.CheckOut.Value).IsEmpty())
@@ -126,9 +130,13 @@ public static class ReservationExcelParser
 
     /// <summary>Guests are joined with "/" (or similar). A hyphen can be part of a name, so it is not a separator.</summary>
     public static int CountPersons(string names)
-        => Math.Max(1, names.Split(['/', '\\', '،', ';', '&', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length);
+        => Math.Max(1, SpacedHyphen().Replace(names, "/").Split(['/', '\\', '،', ';', '&', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length);
 
-    private static DateOnly? ParseDate(IXLCell cell, out bool bad)
+    // " - " with a space on both sides separates two people; "Abo-Elalla" or "Abdel -Latif" are single names.
+    [GeneratedRegex(@"\s-\s")]
+    private static partial Regex SpacedHyphen();
+
+    private static DateOnly? ParseDate(IXLCell cell, DateOnly reference, out bool bad)
     {
         bad = false;
         if (cell.IsEmpty()) return null;
@@ -146,9 +154,28 @@ public static class ReservationExcelParser
         if (DateTime.TryParseExact(s, DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
             return DateOnly.FromDateTime(d);
 
+        // "13-11" or "13/11": day and month with no year. Take the year that puts the date closest to the
+        // day the sheet was sent (a sheet sent in December can mean January of next year).
+        var m = DayMonth().Match(s);
+        if (m.Success && int.TryParse(m.Groups[1].Value, out var day) && int.TryParse(m.Groups[2].Value, out var month))
+        {
+            DateOnly? best = null;
+            foreach (var year in new[] { reference.Year - 1, reference.Year, reference.Year + 1 })
+            {
+                if (month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(year, month)) continue;
+                var candidate = new DateOnly(year, month, day);
+                if (best is null || Math.Abs(candidate.DayNumber - reference.DayNumber) < Math.Abs(best.Value.DayNumber - reference.DayNumber))
+                    best = candidate;
+            }
+            if (best is not null) return best;
+        }
+
         bad = true;
         return null;
     }
+
+    [GeneratedRegex(@"^\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*$")]
+    private static partial Regex DayMonth();
 
     public static VisitorType? ParseType(string raw)
     {

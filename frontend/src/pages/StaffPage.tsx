@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { siteApi } from '../api/endpoints'
 import { EmptyState } from '../components/EmptyState'
 import { LoadingBlock } from '../components/LoadingBlock'
+import { IdCapture } from '../components/IdCapture'
 import { PageHeader } from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
 import { dayBounds, formatDateTime, todayLocal } from '../lib/dates'
@@ -16,8 +17,10 @@ interface Form {
   jobTitle: string
   plateNumber: string
   phone: string
+  nationalId: string
+  idPhotoPath: string | null
 }
-const empty: Form = { name: '', company: '', jobTitle: '', plateNumber: '', phone: '' }
+const empty: Form = { name: '', company: '', jobTitle: '', plateNumber: '', phone: '', nationalId: '', idPhotoPath: null }
 
 export function StaffPage() {
   const { canEdit } = useAuth()
@@ -82,6 +85,8 @@ export function StaffPage() {
       jobTitle: s.jobTitle ?? '',
       plateNumber: s.plateNumber ?? '',
       phone: s.phone ?? '',
+      nationalId: s.nationalId ?? '',
+      idPhotoPath: s.idPhotoPath ?? null,
     })
     setEditingId(s.id)
     setShowForm(true)
@@ -187,6 +192,11 @@ export function StaffPage() {
               الموبايل
               <input maxLength={64} pattern="[0-9٠-٩+ ,.،\/\(\)\-]*" title="اكتب أرقاماً فقط (يمكن استخدام + و - والمسافة)." value={form.phone} onChange={(e) => set({ phone: e.target.value })} inputMode="tel" />
             </label>
+            <IdCapture
+              value={{ nationalId: form.nationalId, photoPath: form.idPhotoPath }}
+              canViewPhoto={canEdit}
+              onChange={(v) => set({ nationalId: v.nationalId, idPhotoPath: v.photoPath ?? null })}
+            />
             <div className="sticky-actions">
               <button className="btn lg" type="submit" disabled={saveMutation.isPending || !form.name.trim()}>
                 {editingId ? 'حفظ التعديل' : 'إضافة'}
@@ -210,7 +220,7 @@ export function StaffPage() {
                 <span className={`badge ${s.isOnSite ? 'contractor' : 'vehicle'}`}>{s.isOnSite ? 'بالموقع' : 'خارج الموقع'}</span>
               </div>
               <div className="muted">
-                {[s.company, s.jobTitle, s.plateNumber, s.phone].filter(Boolean).join(' · ') || '—'}
+                {[s.company, s.jobTitle, s.plateNumber, s.phone].filter(Boolean).join(' · ') || '—'}{s.hasId ? ' · هوية مسجلة ✓' : ''}
               </div>
               {s.lastEntryAt && (
                 <div className="muted">

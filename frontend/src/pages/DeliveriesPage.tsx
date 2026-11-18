@@ -71,23 +71,21 @@ export function DeliveriesPage() {
           </div>
           <div className="results">
             {data.items.map((d) => (
-              <Link key={d.id} className="result-item" to={`/deliveries/${d.id}`}>
-                <div>
-                  <div className="result-title">
-                    وحدة {d.unitNumber} · {d.customerName}
-                  </div>
-                  <div className="result-sub">
-                    {d.deliveryDate} · م. {d.handoverEngineerName}
-                    {d.isFurnished ? ' · مفروشة' : ''}
-                    {!d.isReceived && d.notReceivedReason ? ` · السبب: ${d.notReceivedReason}` : ''}
-                  </div>
-                  {(d.complaints || d.comments) && (
-                    <div className="result-sub">{d.complaints ? `شكوى: ${d.complaints}` : d.comments}</div>
-                  )}
+              <Link key={d.id} className="sub-item link-card" to={`/deliveries/${d.id}`}>
+                <div className="sub-item-head">
+                  <span>{d.customerName}</span>
+                  <span className={`badge ${d.isReceived ? 'ok' : 'danger'}`}>{d.isReceived ? 'تم الاستلام' : 'لم يتم'}</span>
                 </div>
-                <span className={`badge ${d.isReceived ? 'contractor' : 'vehicle'}`}>
-                  {d.isReceived ? 'تم الاستلام' : 'لم يتم'}
-                </span>
+                <div className="chips">
+                  <span className="chip code">{d.unitNumber}</span>
+                  <span className="chip">{d.deliveryDate.split('-').reverse().slice(0, 2).join('/')}</span>
+                  <span className="chip">م. {d.handoverEngineerName}</span>
+                  {d.isFurnished && <span className="chip">مفروشة</span>}
+                </div>
+                {!d.isReceived && d.notReceivedReason && <div className="muted">السبب: {d.notReceivedReason}</div>}
+                {(d.complaints || d.comments) && (
+                  <div className="muted">{d.complaints ? `شكوى: ${d.complaints}` : d.comments}</div>
+                )}
               </Link>
             ))}
           </div>

@@ -20,7 +20,7 @@ public class ValidationSaveChangesInterceptor : SaveChangesInterceptor
         nameof(Owner), nameof(Unit), nameof(Vehicle), nameof(Delivery), nameof(OvernightStay),
         nameof(Contractor), nameof(ContractorWorker), nameof(ContractorVehicle), nameof(ContractorEquipment),
         nameof(ContractorMaterial), nameof(ContractorEntry), nameof(StaffMember), nameof(StaffEntry),
-        nameof(ShiftAssignment), nameof(Reservation), nameof(AppUser)
+        nameof(ShiftAssignment), nameof(Reservation), nameof(ReservationGuest), nameof(AppUser)
     ];
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)

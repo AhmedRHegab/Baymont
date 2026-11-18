@@ -67,7 +67,22 @@ export function UsersPage() {
         {isLoading ? (
           <LoadingBlock />
         ) : (
-          <div className="table-wrap">
+          <>
+          <div className="stack only-mobile">
+            {data?.map((u) => (
+              <div className="sub-item" key={u.id}>
+                <div className="sub-item-head">
+                  <span>{u.displayName}</span>
+                  <span className={`badge ${u.isActive ? 'ok' : 'danger'}`}>{u.isActive ? 'نشط' : 'موقوف'}</span>
+                </div>
+                <div className="chips">
+                  <span className="chip code">{u.userName}</span>
+                  <span className="chip">{roleArabic(u.roles)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="table-wrap only-desktop">
             <table className="table">
               <thead>
                 <tr>
@@ -89,6 +104,7 @@ export function UsersPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 

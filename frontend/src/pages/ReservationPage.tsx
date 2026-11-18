@@ -5,6 +5,7 @@ import { reservationsApi } from '../api/endpoints'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
+import { ReservationGuests } from '../components/ReservationGuests'
 import { useAuth } from '../hooks/useAuth'
 import { dayName, formatDateTime, formatDayDate } from '../lib/dates'
 import { endBeforeStart } from '../lib/validation'
@@ -157,6 +158,7 @@ export function ReservationPage() {
           راجع التاريخين قبل الاعتماد.
         </div>
       )}
+      {data?.status === 1 && <ReservationGuests reservation={data} />}
       {data && data.movements.length > 0 && (
         <section className="card stack">
           <div className="section-title">

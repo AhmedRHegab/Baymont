@@ -108,6 +108,8 @@ export interface ContractorWorker {
   housing?: string | null
   idPhotoPath?: string | null
   criminalRecordPhotoPath?: string | null
+  /** Full for admins and editors, masked for everyone else. */
+  nationalId?: string | null
 }
 
 export interface ContractorVehicle {
@@ -214,6 +216,10 @@ export interface StaffDto {
   isOnSite: boolean
   lastEntryAt?: string | null
   lastExitAt?: string | null
+  hasId: boolean
+  /** Full for admins and editors, masked for everyone else. */
+  nationalId?: string | null
+  idPhotoPath?: string | null
 }
 
 export interface StaffLog {
@@ -278,11 +284,25 @@ export interface Reservation {
   isInside: boolean
   finalDepartureAt?: string | null
   movements: Movement[]
+  guests: Guest[]
   source: string
   sourceFrom?: string | null
   sourceSubject?: string | null
   sourceFileName?: string | null
   sourceSentAt?: string | null
+  createdAt: string
+}
+
+export interface Guest {
+  id: string
+  name: string
+  /** Full for admins and editors, masked for everyone else. */
+  nationalId: string
+  birthDate?: string | null
+  gender?: 1 | 2 | null
+  governorate?: string | null
+  hasPhoto: boolean
+  idPhotoPath?: string | null
   createdAt: string
 }
 

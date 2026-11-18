@@ -17,6 +17,7 @@ public class AuditSaveChangesInterceptor(ICurrentUser currentUser) : SaveChanges
         nameof(Delivery),
         nameof(Reservation),
         nameof(ReservationMovement),
+        nameof(ReservationGuest),
         nameof(OvernightStay),
         nameof(StaffMember),
         nameof(StaffEntry),
@@ -114,7 +115,11 @@ public class AuditSaveChangesInterceptor(ICurrentUser currentUser) : SaveChanges
         foreach (var prop in entry.Properties)
         {
             if (prop.Metadata.Name is "RowVersion") continue;
-            dict[prop.Metadata.Name] = useOriginal ? prop.OriginalValue : prop.CurrentValue;
+            var value = useOriginal ? prop.OriginalValue : prop.CurrentValue;
+            // The audit log is read by more people than the ID data itself, so it only keeps the last 4 digits.
+            if (prop.Metadata.Name == "NationalId" && value is string number)
+                value = Baymont.Application.Common.EgyptianNationalId.Mask(number);
+            dict[prop.Metadata.Name] = value;
         }
 
         return JsonSerializer.Serialize(dict);

@@ -50,6 +50,7 @@ public class Reservation
 
     public Unit? Unit { get; set; }
     public ICollection<ReservationMovement> Movements { get; set; } = new List<ReservationMovement>();
+    public ICollection<ReservationGuest> Guests { get; set; } = new List<ReservationGuest>();
 }
 
 /// <summary>One time the guests went in and (when they left) came out again during the permit.</summary>
@@ -62,6 +63,22 @@ public class ReservationMovement
 
     /// <summary>True when this exit was the final leave.</summary>
     public bool IsFinal { get; set; }
+
+    public Reservation? Reservation { get; set; }
+}
+
+/// <summary>One person of a permit, identified from their ID card. Optional: a permit can have none.</summary>
+public class ReservationGuest
+{
+    public Guid Id { get; set; }
+    public Guid ReservationId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string NationalId { get; set; } = string.Empty;
+    public DateOnly? BirthDate { get; set; }
+    public PersonGender? Gender { get; set; }
+    public string? GovernorateCode { get; set; }
+    public string? IdPhotoPath { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
     public Reservation? Reservation { get; set; }
 }

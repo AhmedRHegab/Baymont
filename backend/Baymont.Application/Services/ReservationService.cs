@@ -1,6 +1,7 @@
 using Baymont.Application.Common;
 using Baymont.Application.Dtos;
 using Baymont.Application.Interfaces;
+using Baymont.Domain.Constants;
 using Baymont.Domain.Entities;
 using Baymont.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
         ReservationStatus status, string? query, CancellationToken ct = default)
     {
         var q = (query ?? string.Empty).Trim().ToLowerInvariant();
-        var rows = db.Reservations.AsNoTracking().Include(r => r.Movements).Where(r => r.Status == status);
+        var rows = db.Reservations.AsNoTracking().Include(r => r.Movements).Include(r => r.Guests).Where(r => r.Status == status);
 
         if (q.Length > 0)
             rows = rows.Where(r => r.UnitCode.ToLower().Contains(q) || r.GuestNames.ToLower().Contains(q));
@@ -29,7 +30,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     }
 
     public async Task<ReservationDto> GetAsync(Guid id, CancellationToken ct = default)
-        => Map(await db.Reservations.AsNoTracking().Include(r => r.Movements).FirstOrDefaultAsync(r => r.Id == id, ct)
+        => Map(await db.Reservations.AsNoTracking().Include(r => r.Movements).Include(r => r.Guests).FirstOrDefaultAsync(r => r.Id == id, ct)
                ?? throw new NotFoundException());
 
     public Task<int> PendingCountAsync(CancellationToken ct = default)
@@ -120,12 +121,21 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
 
     private async Task<Guid?> FindUnitIdAsync(string code, CancellationToken ct)
     {
-        var lower = code.ToLowerInvariant();
-        return await db.Units.AsNoTracking()
-            .Where(u => u.ConstructionNumber != null && u.ConstructionNumber.ToLower() == lower)
-            .Select(u => (Guid?)u.Id)
-            .FirstOrDefaultAsync(ct);
+        // A permit can name two units ("2-C9-0-1 & 2-C9-0-2"); link the first one that exists.
+        foreach (var part in UnitCodeParts(code))
+        {
+            var lower = part.ToLowerInvariant();
+            var id = await db.Units.AsNoTracking()
+                .Where(u => u.ConstructionNumber != null && u.ConstructionNumber.ToLower() == lower)
+                .Select(u => (Guid?)u.Id)
+                .FirstOrDefaultAsync(ct);
+            if (id is not null) return id;
+        }
+        return null;
     }
+
+    private static IEnumerable<string> UnitCodeParts(string code)
+        => code.Split(['&', ',', '،', '/'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     // ---------- gate movement: enter, exit, final leave ----------
 
@@ -203,7 +213,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     }
 
     private async Task<Reservation> LoadAsync(Guid id, CancellationToken ct)
-        => await db.Reservations.Include(x => x.Movements).FirstOrDefaultAsync(x => x.Id == id, ct)
+        => await db.Reservations.Include(x => x.Movements).Include(x => x.Guests).FirstOrDefaultAsync(x => x.Id == id, ct)
            ?? throw new NotFoundException();
 
     private async Task<Reservation> LoadApprovedAsync(Guid id, CancellationToken ct)
@@ -223,7 +233,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     public async Task<ReservationImportResultDto> ImportAsync(
         Stream file, ReservationSource source, CancellationToken ct = default)
     {
-        var parsed = ReservationExcelParser.Parse(file);
+        var parsed = ReservationExcelParser.Parse(file, EgyptClock.DateOf(source.SentAt ?? DateTimeOffset.UtcNow));
         var issues = parsed.Issues.ToList();
         if (parsed.Rows.Count == 0)
             return new ReservationImportResultDto(0, 0, issues);
@@ -272,7 +282,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
             {
                 Id = Guid.NewGuid(),
                 UnitCode = p.UnitCode,
-                UnitId = unitByCode.TryGetValue(p.UnitCode.ToLowerInvariant(), out var uid) ? uid : null,
+                UnitId = UnitCodeParts(p.UnitCode).Select(part => unitByCode.TryGetValue(part.ToLowerInvariant(), out var uid) ? uid : (Guid?)null).FirstOrDefault(x => x is not null),
                 GuestNames = p.GuestNames,
                 PersonsCount = p.PersonsCount,
                 Type = p.Type ?? typeFromMail,
@@ -304,7 +314,7 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
     public async Task<ReservationDashboardDto> DashboardAsync(DateOnly today, DateOnly? start, CancellationToken ct = default)
     {
         var approved = await db.Reservations.AsNoTracking()
-            .Include(r => r.Movements)
+            .Include(r => r.Movements).Include(r => r.Guests)
             .Where(r => r.Status == ReservationStatus.Approved)
             .ToListAsync(ct);
 
@@ -356,9 +366,71 @@ public class ReservationService(IAppDbContext db, ICurrentUser currentUser)
             weeks);
     }
 
-    private static ReservationDto Map(Reservation r) => new(
+    private bool CanSeeIds => currentUser.IsInRole(AppRoles.Admin) || currentUser.IsInRole(AppRoles.Editor);
+
+    private ReservationDto Map(Reservation r) => new(
         r.Id, r.UnitCode, r.UnitId, r.GuestNames, r.PersonsCount, r.Type, r.CheckInDate, r.CheckOutDate,
         r.PeriodEstimated, r.Notes, r.Status, IsInside(r), r.FinalDepartureAt,
         r.Movements.OrderBy(m => m.EnteredAt).Select(m => new MovementDto(m.Id, m.EnteredAt, m.ExitedAt, m.IsFinal)).ToList(),
+        r.Guests.OrderBy(g => g.CreatedAt).Select(MapGuest).ToList(),
         r.Source, r.SourceFrom, r.SourceSubject, r.SourceFileName, r.SourceSentAt, r.CreatedAt);
+
+    private GuestDto MapGuest(ReservationGuest g) => new(
+        g.Id, g.Name,
+        CanSeeIds ? g.NationalId : EgyptianNationalId.Mask(g.NationalId),
+        g.BirthDate, g.Gender, EgyptianNationalId.GovernorateName(g.GovernorateCode),
+        !string.IsNullOrEmpty(g.IdPhotoPath),
+        CanSeeIds ? g.IdPhotoPath : null,
+        g.CreatedAt);
+
+    // ---------- ID cards of the people on a permit ----------
+
+    /// <summary>The gate adds the people as they arrive. Optional: a permit works without any.</summary>
+    public async Task<ReservationDto> AddGuestAsync(Guid reservationId, SaveGuestRequest request, CancellationToken ct = default)
+    {
+        var r = await LoadApprovedAsync(reservationId, ct);
+        if (r.Guests.Count >= 100) throw new ValidationException("عدد الهويات المسجلة لهذا الحجز كبير جداً.");
+
+        var guest = new ReservationGuest { Id = Guid.NewGuid(), ReservationId = r.Id, CreatedAt = DateTimeOffset.UtcNow };
+        ApplyGuest(guest, request, r.Guests);
+        db.ReservationGuests.Add(guest);
+        await db.SaveChangesAsync(ct);
+        return await GetAsync(r.Id, ct);
+    }
+
+    public async Task<ReservationDto> UpdateGuestAsync(Guid reservationId, Guid guestId, SaveGuestRequest request, CancellationToken ct = default)
+    {
+        var r = await LoadAsync(reservationId, ct);
+        var guest = r.Guests.FirstOrDefault(g => g.Id == guestId) ?? throw new NotFoundException("الهوية غير موجودة.");
+        ApplyGuest(guest, request, r.Guests.Where(g => g.Id != guestId));
+        await db.SaveChangesAsync(ct);
+        return await GetAsync(r.Id, ct);
+    }
+
+    public async Task RemoveGuestAsync(Guid reservationId, Guid guestId, CancellationToken ct = default)
+    {
+        var r = await LoadAsync(reservationId, ct);
+        var guest = r.Guests.FirstOrDefault(g => g.Id == guestId) ?? throw new NotFoundException("الهوية غير موجودة.");
+        db.ReservationGuests.Remove(guest);
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static void ApplyGuest(ReservationGuest g, SaveGuestRequest q, IEnumerable<ReservationGuest> others)
+    {
+        Check.Required(q.Name, "الاسم");
+        Check.MaxLength(q.Name, 256, "الاسم");
+        if (string.IsNullOrWhiteSpace(q.NationalId)) throw new ValidationException("الحقل «الرقم القومي» مطلوب.");
+
+        // The date of birth, gender and governorate are always worked out from the number, never taken from the browser.
+        var info = EgyptianNationalId.ParseOrNull(q.NationalId)!;
+        if (others.Any(o => o.NationalId == info.Number))
+            throw new ValidationException("هذا الرقم القومي مسجل بالفعل لهذا الحجز.");
+
+        g.Name = q.Name.Trim();
+        g.NationalId = info.Number;
+        g.BirthDate = info.BirthDate;
+        g.Gender = info.Gender;
+        g.GovernorateCode = info.GovernorateCode;
+        g.IdPhotoPath = UploadNames.Clean(q.IdPhotoPath);
+    }
 }

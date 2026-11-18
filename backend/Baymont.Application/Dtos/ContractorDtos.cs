@@ -15,7 +15,11 @@ public record ContractorWorkerDto(
     string? JobTitle,
     string? Housing,
     string? IdPhotoPath,
-    string? CriminalRecordPhotoPath);
+    string? CriminalRecordPhotoPath,
+    string? NationalId = null,
+    DateOnly? BirthDate = null,
+    PersonGender? Gender = null,
+    string? Governorate = null);
 
 public record ContractorVehicleDto(
     Guid? Id,

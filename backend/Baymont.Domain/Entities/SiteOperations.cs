@@ -26,6 +26,12 @@ public class StaffMember
     public string? JobTitle { get; set; }
     public string? PlateNumber { get; set; }
     public string? Phone { get; set; }
+
+    public string? NationalId { get; set; }
+    public DateOnly? BirthDate { get; set; }
+    public PersonGender? Gender { get; set; }
+    public string? GovernorateCode { get; set; }
+    public string? IdPhotoPath { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     public ICollection<StaffEntry> Entries { get; set; } = new List<StaffEntry>();

@@ -40,6 +40,12 @@ public class ContractorWorker : ContractorChild
     public string? Housing { get; set; }
     public string? IdPhotoPath { get; set; }
     public string? CriminalRecordPhotoPath { get; set; }
+
+    /// <summary>National number as read from the ID card. The next three are worked out from it, never typed.</summary>
+    public string? NationalId { get; set; }
+    public DateOnly? BirthDate { get; set; }
+    public PersonGender? Gender { get; set; }
+    public string? GovernorateCode { get; set; }
 }
 
 public class ContractorVehicle : ContractorChild

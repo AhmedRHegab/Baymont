@@ -105,6 +105,25 @@ public class ReservationsController(ReservationService svc) : ControllerBase
         return NoContent();
     }
 
+    // ID cards of the people on a permit.
+    [HttpPost("{id:guid}/guests")]
+    [Authorize(Roles = Gate)]
+    public async Task<IActionResult> AddGuest(Guid id, [FromBody] SaveGuestRequest request, CancellationToken ct)
+        => Ok(await svc.AddGuestAsync(id, request, ct));
+
+    [HttpPut("{id:guid}/guests/{guestId:guid}")]
+    [Authorize(Roles = Reviewers)]
+    public async Task<IActionResult> UpdateGuest(Guid id, Guid guestId, [FromBody] SaveGuestRequest request, CancellationToken ct)
+        => Ok(await svc.UpdateGuestAsync(id, guestId, request, ct));
+
+    [HttpDelete("{id:guid}/guests/{guestId:guid}")]
+    [Authorize(Roles = Reviewers)]
+    public async Task<IActionResult> RemoveGuest(Guid id, Guid guestId, CancellationToken ct)
+    {
+        await svc.RemoveGuestAsync(id, guestId, ct);
+        return NoContent();
+    }
+
     /// <summary>Emergency fallback: upload a permit sheet by hand. New permits go to the review queue.</summary>
     [HttpPost("import")]
     [Authorize(Roles = Fallback)]

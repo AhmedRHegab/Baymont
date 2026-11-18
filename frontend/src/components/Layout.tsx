@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { DemoBanner } from './DemoBanner'
 import { GlobalErrors } from './GlobalErrors'
+import { BrandMark, Icon, type IconName } from './Icon'
 
 function roleLabel(roles: string[]) {
   if (roles.includes('Admin')) return 'مدير النظام'
@@ -11,185 +12,240 @@ function roleLabel(roles: string[]) {
   return 'بحث فقط'
 }
 
+interface NavItem {
+  to: string
+  label: string
+  icon: IconName
+  end?: boolean
+}
+
+/** A bottom sheet: the phone-style panel that slides up from the bottom. */
+function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: ReactNode }) {
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-handle" aria-hidden />
+        {title && <h2 className="sheet-title">{title}</h2>}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/** A small dropdown for the desktop top bar. */
+function Dropdown({ label, icon, children }: { label: string; icon: IconName; children: ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const location = useLocation()
+
+  useEffect(() => setOpen(false), [location.pathname])
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    document.addEventListener('click', onDoc)
+    return () => document.removeEventListener('click', onDoc)
+  }, [])
+
+  return (
+    <div className="add-menu" ref={ref}>
+      <button type="button" className="nav-link" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <Icon name={icon} size={18} />
+        {label}
+      </button>
+      {open && <div className="add-panel">{children}</div>}
+    </div>
+  )
+}
+
 export function Layout() {
   const { user, logout, isAdmin, canEdit, canDeliver } = useAuth()
-  const [addOpen, setAddOpen] = useState(false)
-  const [moreOpen, setMoreOpen] = useState(false)
-  const addRef = useRef<HTMLDivElement>(null)
+  const [sheet, setSheet] = useState<'add' | 'more' | null>(null)
   const location = useLocation()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    setAddOpen(false)
-    setMoreOpen(false)
-  }, [location.pathname])
+  useEffect(() => setSheet(null), [location.pathname])
 
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!addRef.current?.contains(e.target as Node)) setAddOpen(false)
-    }
-    document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
-  }, [])
+  const main: NavItem[] = [
+    { to: '/', label: 'البحث', icon: 'search', end: true },
+    { to: '/reservations', label: 'الحجوزات', icon: 'ticket' },
+    { to: '/follow-up', label: 'المتابعة', icon: 'activity' },
+    { to: '/contractors', label: 'المقاولون', icon: 'hardhat' },
+    { to: '/deliveries', label: 'التسليمات', icon: 'key' },
+    { to: '/overnight', label: 'المبيت', icon: 'moon' },
+    { to: '/staff', label: 'الموظفون', icon: 'users' },
+    { to: '/shifts', label: 'الورديات', icon: 'shield' },
+  ]
+  const admin: NavItem[] = [
+    ...(canEdit ? [{ to: '/inbox', label: 'البريد', icon: 'mail' } as NavItem] : []),
+    ...(isAdmin || canEdit ? [{ to: '/audit', label: 'سجل العمليات', icon: 'clipboard' } as NavItem] : []),
+    ...(isAdmin ? [{ to: '/users', label: 'المستخدمون', icon: 'userPlus' } as NavItem] : []),
+    ...(isAdmin ? [{ to: '/import', label: 'استيراد ملف', icon: 'upload' } as NavItem] : []),
+  ]
+  const add: NavItem[] = canEdit
+    ? [
+        { to: '/owners/new', label: 'مالك', icon: 'user' },
+        { to: '/units/new', label: 'وحدة', icon: 'building' },
+        { to: '/vehicles/new', label: 'سيارة', icon: 'car' },
+        { to: '/contractors/new', label: 'مقاول', icon: 'hardhat' },
+        { to: '/deliveries/new', label: 'تسليم', icon: 'key' },
+      ]
+    : []
+
+  // The phone's bottom bar keeps the three screens people use all day; everything else lives under "المزيد".
+  const tabs = [main[0], main[1], main[2]]
+  const more = [...main.slice(3), ...admin]
+  const link = ({ isActive }: { isActive: boolean }) => `nav-link${isActive ? ' active' : ''}`
+  const tab = ({ isActive }: { isActive: boolean }) => `bottom-item${isActive ? ' active' : ''}`
+  const initial = (user?.displayName ?? '?').trim().charAt(0)
+
+  function onAddTap() {
+    if (canEdit) setSheet('add')
+    else if (canDeliver) navigate('/deliveries/new')
+  }
 
   return (
     <div className="app-shell">
       <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark" aria-hidden>
-            ب
-          </div>
-          <div>
-            <strong>باي مونت السخنة</strong>
-            <span>نظام الأمن · بحث سريع وواضح</span>
-          </div>
-        </div>
-
-        <nav className="nav nav-desktop">
-          <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            🔍 البحث
-          </NavLink>
-
-          <NavLink to="/contractors" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            المقاولون
-          </NavLink>
-
-          <NavLink to="/follow-up" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            المتابعة
-          </NavLink>
-          <NavLink to="/reservations" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            الحجوزات
-          </NavLink>
-          <NavLink to="/overnight" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            المبيت
-          </NavLink>
-          <NavLink to="/staff" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            الموظفون
-          </NavLink>
-          <NavLink to="/shifts" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            الورديات
-          </NavLink>
-          <NavLink to="/deliveries" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            التسليمات
-          </NavLink>
-
-          {canEdit && (
-            <div className="add-menu" ref={addRef}>
-              <button
-                type="button"
-                className="nav-link"
-                onClick={() => setAddOpen((v) => !v)}
-                aria-expanded={addOpen}
-              >
-                ＋ إضافة
-              </button>
-              {addOpen && (
-                <div className="add-panel">
-                  <NavLink to="/owners/new">إضافة مالك</NavLink>
-                  <NavLink to="/units/new">إضافة وحدة</NavLink>
-                  <NavLink to="/vehicles/new">إضافة سيارة</NavLink>
-                  <NavLink to="/contractors/new">إضافة مقاول</NavLink>
-                  <NavLink to="/deliveries/new">إضافة تسليم</NavLink>
-                </div>
-              )}
+        <div className="topbar-inner">
+          <NavLink to="/" className="brand" aria-label="الرئيسية">
+            <BrandMark size={38} />
+            <div>
+              <strong>باي مونت السخنة</strong>
+              <span>سجل الأمن</span>
             </div>
-          )}
+          </NavLink>
 
-          {canDeliver && !canEdit && (
-            <NavLink to="/deliveries/new" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-              ＋ إضافة تسليم
-            </NavLink>
-          )}
-
-          {canEdit && (
-            <NavLink to="/inbox" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-              البريد
-            </NavLink>
-          )}
-
-          {(isAdmin || canEdit) && (
-            <NavLink to="/audit" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-              سجل العمليات
-            </NavLink>
-          )}
-          {isAdmin && (
-            <NavLink to="/users" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-              المستخدمون
-            </NavLink>
-          )}
-          {isAdmin && (
-            <NavLink to="/import" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-              استيراد ملف
-            </NavLink>
-          )}
+          <nav className="nav nav-desktop" aria-label="التنقل">
+            {main.map((i) => (
+              <NavLink key={i.to} to={i.to} end={i.end} className={link}>
+                <Icon name={i.icon} size={18} />
+                {i.label}
+              </NavLink>
+            ))}
+            {canEdit && (
+              <Dropdown label="إضافة" icon="plus">
+                {add.map((i) => (
+                  <NavLink key={i.to} to={i.to}>
+                    <Icon name={i.icon} size={18} />
+                    {i.label}
+                  </NavLink>
+                ))}
+              </Dropdown>
+            )}
+            {!canEdit && canDeliver && (
+              <NavLink to="/deliveries/new" className={link}>
+                <Icon name="plus" size={18} />
+                إضافة تسليم
+              </NavLink>
+            )}
+            {admin.length > 0 && (
+              <Dropdown label="الإدارة" icon="grid">
+                {admin.map((i) => (
+                  <NavLink key={i.to} to={i.to}>
+                    <Icon name={i.icon} size={18} />
+                    {i.label}
+                  </NavLink>
+                ))}
+              </Dropdown>
+            )}
+          </nav>
 
           <div className="nav-user">
-            <span className="user-chip">
-              {user?.displayName} · {roleLabel(user?.roles ?? [])}
-            </span>
-            <button className="btn secondary" type="button" onClick={() => void logout()}>
-              خروج
+            <div className="user-chip" title={user?.displayName}>
+              <span className="avatar">{initial}</span>
+              <span className="user-text">
+                <strong>{user?.displayName}</strong>
+                <small>{roleLabel(user?.roles ?? [])}</small>
+              </span>
+            </div>
+            <button className="icon-btn logout-btn" type="button" onClick={() => void logout()} aria-label="تسجيل الخروج" title="تسجيل الخروج">
+              <Icon name="logout" size={20} />
             </button>
           </div>
-        </nav>
+        </div>
       </header>
 
       <main className="main">
         <DemoBanner />
         <GlobalErrors />
-        <Outlet />
+        <div className="page" key={location.pathname}>
+          <Outlet />
+        </div>
       </main>
 
-      {moreOpen && (
-        <div className="more-panel">
-          <NavLink to="/follow-up">المتابعة</NavLink>
-          <NavLink to="/reservations">الحجوزات</NavLink>
-          <NavLink to="/contractors">المقاولون</NavLink>
-          <NavLink to="/deliveries">التسليمات</NavLink>
-          <NavLink to="/overnight">المبيت</NavLink>
-          <NavLink to="/staff">الموظفون</NavLink>
-          <NavLink to="/shifts">الورديات</NavLink>
-          {canDeliver && !canEdit && <NavLink to="/deliveries/new">＋ إضافة تسليم</NavLink>}
-          {canEdit && <NavLink to="/inbox">البريد</NavLink>}
-          {(isAdmin || canEdit) && <NavLink to="/audit">سجل العمليات</NavLink>}
-          {isAdmin && <NavLink to="/users">المستخدمون</NavLink>}
-          {isAdmin && <NavLink to="/import">استيراد ملف</NavLink>}
-        </div>
-      )}
-
       <nav className="bottom-bar" aria-label="القائمة السريعة">
-        <button
-          type="button"
-          className={`bottom-item${location.pathname === '/' ? ' active' : ''}`}
-          onClick={() => navigate('/')}
-        >
-          <span>🔍</span>
-          بحث
-        </button>
-        {canEdit && (
-          <button
-            type="button"
-            className={`bottom-item${location.pathname.includes('/new') ? ' active' : ''}`}
-            onClick={() => navigate('/vehicles/new')}
-          >
-            <span>＋</span>
-            إضافة
+        {tabs.slice(0, 2).map((i) => (
+          <NavLink key={i.to} to={i.to} end={i.end} className={tab}>
+            <span className="bottom-icon">
+              <Icon name={i.icon} size={22} />
+            </span>
+            {i.label}
+          </NavLink>
+        ))}
+
+        {(canEdit || canDeliver) && (
+          <button type="button" className="bottom-fab" onClick={onAddTap} aria-label="إضافة">
+            <Icon name="plus" size={28} />
           </button>
         )}
-        <button
-          type="button"
-          className={`bottom-item${moreOpen ? ' active' : ''}`}
-          onClick={() => setMoreOpen((v) => !v)}
-          aria-expanded={moreOpen}
-        >
-          <span>☰</span>
-          القائمة
-        </button>
-        <button type="button" className="bottom-item" onClick={() => void logout()}>
-          <span>⎋</span>
-          خروج
+
+        <NavLink to={tabs[2].to} className={tab}>
+          <span className="bottom-icon">
+            <Icon name={tabs[2].icon} size={22} />
+          </span>
+          {tabs[2].label}
+        </NavLink>
+        <button type="button" className={`bottom-item${sheet === 'more' ? ' active' : ''}`} onClick={() => setSheet('more')} aria-label="المزيد">
+          <span className="bottom-icon">
+            <Icon name="grid" size={22} />
+          </span>
+          المزيد
         </button>
       </nav>
+
+      <Sheet open={sheet === 'add'} onClose={() => setSheet(null)} title="إضافة جديد">
+        <div className="sheet-grid">
+          {add.map((i) => (
+            <NavLink key={i.to} to={i.to} className="sheet-tile">
+              <span className="tile-icon">
+                <Icon name={i.icon} size={24} />
+              </span>
+              {i.label}
+            </NavLink>
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet open={sheet === 'more'} onClose={() => setSheet(null)}>
+        <div className="sheet-user">
+          <span className="avatar lg">{initial}</span>
+          <div>
+            <strong>{user?.displayName}</strong>
+            <small>{roleLabel(user?.roles ?? [])}</small>
+          </div>
+          <button type="button" className="btn secondary sm" onClick={() => void logout()}>
+            <Icon name="logout" size={18} />
+            خروج
+          </button>
+        </div>
+        <div className="sheet-grid">
+          {more.map((i) => (
+            <NavLink key={i.to} to={i.to} className="sheet-tile">
+              <span className="tile-icon">
+                <Icon name={i.icon} size={24} />
+              </span>
+              {i.label}
+            </NavLink>
+          ))}
+        </div>
+      </Sheet>
     </div>
   )
 }

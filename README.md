@@ -31,6 +31,13 @@ Users created on first start (passwords come from the `Seed` section of `appsett
 - `admin` (Admin)
 - `gate` (SearchOnly)
 
+## ID cards
+
+Optional ID capture for permit guests, contractor workers and staff. The 14-digit Egyptian national number is decoded on the
+server into birth date, gender and governorate (structure check only; the check digit has no published rule). Full numbers and
+photos are visible to Admin/Editor only; the gate sees a masked number; the audit log keeps the last 4 digits. The photo
+(camera or gallery) is only stored: nothing is read from it, and the number is typed by a person.
+
 ## Sample data
 
 On the first start of an **empty** database the app creates invented sample data (owners, units, contractors, deliveries,

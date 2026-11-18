@@ -103,12 +103,14 @@ export function ReservationsPage() {
 
       <section className="card stack">
         {canEdit && (
-          <div className="actions">
+          <div className="segmented" role="tablist">
             {tabs.map((t) => (
               <button
                 key={t.status}
                 type="button"
-                className={`btn ${status === t.status ? '' : 'secondary'}`}
+                role="tab"
+                aria-selected={status === t.status}
+                className={status === t.status ? 'on' : ''}
                 onClick={() => setStatus(t.status)}
               >
                 {t.label}

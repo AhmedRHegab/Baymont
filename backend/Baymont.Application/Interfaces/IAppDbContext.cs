@@ -21,6 +21,7 @@ public interface IAppDbContext
     DbSet<ShiftAssignment> ShiftAssignments { get; }
     DbSet<Reservation> Reservations { get; }
     DbSet<ReservationMovement> ReservationMovements { get; }
+    DbSet<ReservationGuest> ReservationGuests { get; }
     DbSet<InboxMessage> InboxMessages { get; }
     DbSet<DemoRecord> DemoRecords { get; }
     DbSet<AuditLog> AuditLogs { get; }

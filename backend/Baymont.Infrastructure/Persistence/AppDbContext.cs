@@ -25,6 +25,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ShiftAssignment> ShiftAssignments => Set<ShiftAssignment>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<ReservationMovement> ReservationMovements => Set<ReservationMovement>();
+    public DbSet<ReservationGuest> ReservationGuests => Set<ReservationGuest>();
     public DbSet<InboxMessage> InboxMessages => Set<InboxMessage>();
     public DbSet<DemoRecord> DemoRecords => Set<DemoRecord>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -123,6 +124,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.Housing).HasMaxLength(256);
             e.Property(x => x.IdPhotoPath).HasMaxLength(128);
             e.Property(x => x.CriminalRecordPhotoPath).HasMaxLength(128);
+            e.Property(x => x.NationalId).HasMaxLength(14);
+            e.Property(x => x.GovernorateCode).HasMaxLength(2);
+            e.HasIndex(x => x.NationalId);
         });
         ConfigureChild<ContractorVehicle>(builder, "contractor_vehicles", c => c.Vehicles, e =>
         {
@@ -190,6 +194,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.Property(x => x.JobTitle).HasMaxLength(128);
             e.Property(x => x.PlateNumber).HasMaxLength(64);
             e.Property(x => x.Phone).HasMaxLength(64);
+            e.Property(x => x.NationalId).HasMaxLength(14);
+            e.Property(x => x.GovernorateCode).HasMaxLength(2);
+            e.Property(x => x.IdPhotoPath).HasMaxLength(128);
+            e.HasIndex(x => x.NationalId);
             e.HasIndex(x => x.Name);
         });
 
@@ -249,6 +257,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             e.HasKey(x => x.Id);
             e.Property(x => x.EntityType).HasMaxLength(64).IsRequired();
             e.HasIndex(x => x.EntityType);
+        });
+
+        builder.Entity<ReservationGuest>(e =>
+        {
+            e.ToTable("reservation_guests");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).HasMaxLength(256).IsRequired();
+            e.Property(x => x.NationalId).HasMaxLength(14).IsRequired();
+            e.Property(x => x.GovernorateCode).HasMaxLength(2);
+            e.Property(x => x.IdPhotoPath).HasMaxLength(128);
+            e.HasIndex(x => x.NationalId);
+            // The same person is listed once per permit.
+            e.HasIndex(x => new { x.ReservationId, x.NationalId }).IsUnique();
+            e.HasOne(x => x.Reservation).WithMany(r => r.Guests)
+                .HasForeignKey(x => x.ReservationId).OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<InboxMessage>(e =>

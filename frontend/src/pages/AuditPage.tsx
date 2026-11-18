@@ -3,6 +3,7 @@ import { auditApi } from '../api/endpoints'
 import { EmptyState } from '../components/EmptyState'
 import { LoadingBlock } from '../components/LoadingBlock'
 import { PageHeader } from '../components/PageHeader'
+import { formatDateTime } from '../lib/dates'
 
 const actionLabel: Record<string, string> = {
   Create: 'إضافة',
@@ -53,7 +54,21 @@ export function AuditPage() {
             description="ستظهر هنا أي إضافة أو تعديل على الملاك والوحدات والسيارات."
           />
         ) : (
-          <div className="table-wrap">
+          <>
+          <div className="stack only-mobile">
+            {data.map((row) => (
+              <div className="sub-item" key={row.id}>
+                <div className="sub-item-head">
+                  <span>
+                    {actionLabel[row.action] ?? row.action} · {entityLabel[row.entityType] ?? row.entityType}
+                  </span>
+                  <span className="chip">{row.userName || '—'}</span>
+                </div>
+                <div className="muted">{formatDateTime(row.occurredAt)}</div>
+              </div>
+            ))}
+          </div>
+          <div className="table-wrap only-desktop">
             <table className="table">
               <thead>
                 <tr>
@@ -67,7 +82,7 @@ export function AuditPage() {
               <tbody>
                 {data.map((row) => (
                   <tr key={row.id}>
-                    <td>{new Date(row.occurredAt).toLocaleString('ar-EG')}</td>
+                    <td>{formatDateTime(row.occurredAt)}</td>
                     <td>{actionLabel[row.action] ?? row.action}</td>
                     <td>{entityLabel[row.entityType] ?? row.entityType}</td>
                     <td style={{ fontSize: '0.9rem' }}>{row.entityId.slice(0, 8)}…</td>
@@ -77,6 +92,7 @@ export function AuditPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
     </div>

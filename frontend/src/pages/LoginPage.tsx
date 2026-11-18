@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { SESSION_EXPIRED_EVENT } from '../api/client'
+import { BrandMark } from '../components/Icon'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError } from '../types'
 
@@ -55,9 +56,7 @@ export function LoginPage() {
     <div className="login-wrap">
       <form className="card login-card form-grid" onSubmit={onSubmit}>
         <div className="login-brand">
-          <div className="brand-mark" aria-hidden>
-            ب
-          </div>
+          <BrandMark size={72} />
           <h1>باي مونت السخنة</h1>
           <p className="lead muted">نظام الأمن الداخلي — اكتب بياناتك ثم اضغط دخول</p>
         </div>

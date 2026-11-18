@@ -345,11 +345,21 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("ContractorId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CriminalRecordPhotoPath")
                         .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Gender")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GovernorateCode")
+                        .HasMaxLength(2)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Housing")
@@ -369,9 +379,15 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("NationalId")
+                        .HasMaxLength(14)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ContractorId");
+
+                    b.HasIndex("NationalId");
 
                     b.ToTable("contractor_workers", (string)null);
                 });
@@ -698,6 +714,52 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.ToTable("reservations", (string)null);
                 });
 
+            modelBuilder.Entity("Baymont.Domain.Entities.ReservationGuest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Gender")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GovernorateCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdPhotoPath")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NationalId")
+                        .IsRequired()
+                        .HasMaxLength(14)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NationalId");
+
+                    b.HasIndex("ReservationId", "NationalId")
+                        .IsUnique();
+
+                    b.ToTable("reservation_guests", (string)null);
+                });
+
             modelBuilder.Entity("Baymont.Domain.Entities.ReservationMovement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -800,12 +862,26 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Company")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<long>("CreatedAt")
                         .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Gender")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GovernorateCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdPhotoPath")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("JobTitle")
                         .HasMaxLength(128)
@@ -814,6 +890,10 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NationalId")
+                        .HasMaxLength(14)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Phone")
@@ -827,6 +907,8 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("NationalId");
 
                     b.ToTable("staff_members", (string)null);
                 });
@@ -1188,6 +1270,17 @@ namespace Baymont.Infrastructure.Persistence.Migrations
                     b.Navigation("Unit");
                 });
 
+            modelBuilder.Entity("Baymont.Domain.Entities.ReservationGuest", b =>
+                {
+                    b.HasOne("Baymont.Domain.Entities.Reservation", "Reservation")
+                        .WithMany("Guests")
+                        .HasForeignKey("ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Reservation");
+                });
+
             modelBuilder.Entity("Baymont.Domain.Entities.ReservationMovement", b =>
                 {
                     b.HasOne("Baymont.Domain.Entities.Reservation", "Reservation")
@@ -1310,6 +1403,8 @@ namespace Baymont.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Baymont.Domain.Entities.Reservation", b =>
                 {
+                    b.Navigation("Guests");
+
                     b.Navigation("Movements");
                 });
 

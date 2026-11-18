@@ -77,6 +77,8 @@ public static class FieldLabels
         ["Role"] = "الصلاحية",
         ["Name"] = "الاسم",
         ["Approve"] = "الاعتماد",
+        ["NationalId"] = "الرقم القومي",
+        ["GovernorateCode"] = "كود المحافظة",
         ["Workers"] = "العمال",
         ["Vehicles"] = "السيارات",
         ["Equipment"] = "المعدات",

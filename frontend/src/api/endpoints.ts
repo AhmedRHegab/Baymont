@@ -138,6 +138,10 @@ export const reservationsApi = {
       `/api/reservations/dashboard?today=${today}${start ? `&start=${start}` : ''}`,
     ),
   pendingCount: () => api<{ count: number }>('/api/reservations/pending-count'),
+  addGuest: (id: string, body: { name: string; nationalId: string; idPhotoPath?: string | null }) =>
+    api<Reservation>(`/api/reservations/${id}/guests`, { method: 'POST', body: JSON.stringify(body) }),
+  removeGuest: (id: string, guestId: string) =>
+    api<void>(`/api/reservations/${id}/guests/${guestId}`, { method: 'DELETE' }),
   import: (file: File) => postFile<ReservationImportResult>('/api/reservations/import', file),
 }
 
@@ -155,6 +159,8 @@ export const demoApi = {
 export const uploadsApi = {
   url: (path: string) => `/api/uploads/${path}`,
   upload: async (file: File) => (await postFile<{ path: string }>('/api/uploads', file)).path,
+  /** A photo of an ID card: the gate may add one, only admins and editors can open it. */
+  uploadId: async (file: File) => (await postFile<{ path: string }>('/api/uploads/id', file)).path,
 }
 
 export const usersApi = {

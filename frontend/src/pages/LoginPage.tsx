@@ -99,6 +99,8 @@ export function LoginPage() {
           {busy ? 'جاري الدخول...' : 'دخول'}
         </button>
       </form>
+
+      <p className="login-credit">بواسطة اللواء محمد عبدالرازق</p>
     </div>
   )
 }

@@ -1257,6 +1257,14 @@ a.banner {
   box-shadow: var(--shadow);
 }
 
+.login-credit {
+  margin-top: 1.1rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .login-brand {
   display: grid;
   justify-items: center;

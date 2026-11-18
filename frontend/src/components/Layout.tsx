@@ -118,7 +118,7 @@ export function Layout() {
             <BrandMark size={38} />
             <div>
               <strong>باي مونت السخنة</strong>
-              <span>سجل الأمن</span>
+              <span>بواسطة اللواء محمد عبدالرازق</span>
             </div>
           </NavLink>
 

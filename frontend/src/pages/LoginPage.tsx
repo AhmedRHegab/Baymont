@@ -54,6 +54,8 @@ export function LoginPage() {
 
   return (
     <div className="login-wrap">
+      <p className="login-credit">بواسطة اللواء محمد عبدالرازق</p>
+
       <form className="card login-card form-grid" onSubmit={onSubmit}>
         <div className="login-brand">
           <BrandMark size={72} />
@@ -99,8 +101,6 @@ export function LoginPage() {
           {busy ? 'جاري الدخول...' : 'دخول'}
         </button>
       </form>
-
-      <p className="login-credit">بواسطة اللواء محمد عبدالرازق</p>
     </div>
   )
 }

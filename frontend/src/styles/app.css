@@ -267,9 +267,10 @@ img {
 
 .brand strong {
   display: block;
+  margin-bottom: 0.2rem;
   font-size: 1.02rem;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .brand span {
@@ -277,7 +278,7 @@ img {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 .brand-mark {
@@ -1258,7 +1259,7 @@ a.banner {
 }
 
 .login-credit {
-  margin-top: 1.1rem;
+  margin-bottom: 1.1rem;
   color: var(--muted);
   font-size: 0.95rem;
   font-weight: 700;
